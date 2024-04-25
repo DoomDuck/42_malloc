@@ -19,7 +19,7 @@ clean:
 	$(RM) $(OBJ_DIR)
 
 .PHONY: fclean
-fclean: 
+fclean: clean
 	$(RM) $(NAME)
 
 .PHONY: re
