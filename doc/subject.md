@@ -1,7 +1,7 @@
 # Subject
 
 ## Required functionalities
-- Host dependent library 
+- Host dependent library
 - Correctly alligned allocations
 
 ## Required functions
