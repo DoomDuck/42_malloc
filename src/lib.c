@@ -226,7 +226,6 @@ void* malloc(size_t allocation_size) {
 	print_size_t(LOG_FD, allocation_size);
 	write_string(LOG_FD, " <- malloc\n");
 
-
 	// For now only use large page algorithm
 	// TODO: Lookup good page type
 	// 	   page_type type = page_type_for_allocation_size(allocation_size);
@@ -234,11 +233,7 @@ void* malloc(size_t allocation_size) {
 
 	page* p = page_new(type, allocation_size);
 
-	if (p == NULL) {
-		// TODO: log
-		// Allocation failed
-		return NULL;
-	}
+	if (!p) return NULL;
 
 	print_pointer(LOG_FD, &p->first_chunk.body.payload);
 	write_string(LOG_FD, " <- malloc return\n");
@@ -248,6 +243,7 @@ void* malloc(size_t allocation_size) {
 void free(void* ptr) {
 	print_pointer(LOG_FD, ptr);
 	write_string(LOG_FD, " <- free\n");
+
 	// Noop on null pointer
 	if (!ptr) return;
 
@@ -259,7 +255,7 @@ void free(void* ptr) {
 	page_deinit(p);
 }
 
-void mem_copy(void* destination, const void* source, size_t count) {
+void memory_copy(void* destination, const void* source, size_t count) {
 	uint8_t* destination_array = destination;
 	const uint8_t* source_array = source;
 	for (size_t i = 0; i < count; ++i)
@@ -273,10 +269,9 @@ void* realloc(void* ptr, size_t new_size) {
 	print_size_t(LOG_FD, new_size);
 	write_string(LOG_FD, " <- realloc\n");
 
-	// On null ptr it is equivalent to malloc
+	// On null ptr realloc is equivalent to malloc
 	if (!ptr) return malloc(new_size);
 
-	// TODO: check behaviour when new_size is 0
 	chunk* c = chunk_of_payload(ptr);
 
 	size_t previous_size = chunk_size(c);
@@ -285,9 +280,9 @@ void* realloc(void* ptr, size_t new_size) {
 	
 	size_t copied_amount = previous_size;
 	if (previous_size > new_size) copied_amount = new_size;
-	mem_copy(new_place, ptr, copied_amount);
+	memory_copy(new_place, ptr, copied_amount);
 
 	free(ptr);
 
-	return NULL;
+	return new_place;
 }
