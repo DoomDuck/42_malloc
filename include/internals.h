@@ -38,3 +38,5 @@ typedef struct s_page {
 	struct s_page* next;
 	chunk first_chunk;
 } page;
+
+page* page_of_first_chunk(chunk* first);
