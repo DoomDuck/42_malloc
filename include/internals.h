@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -46,8 +48,11 @@ typedef struct s_page page;
 
 typedef struct s_page_list_node {
 	struct s_page_list_node* previous;
-	page* next;
+	struct s_page_list_node* next;
 } page_list_node;
+
+// Name reserved for the first node of a list
+typedef page_list_node page_list;
 
 struct s_page {
 	page_list_node node;
@@ -56,20 +61,31 @@ struct s_page {
 	chunk first_chunk;
 };
 
+
 size_t page_type_size(page_type self, size_t required_size);
 page* page_new(page_type type, size_t allocation_size);
-void page_init(page* self, size_t size, page_list_node* previous, page* next);
+void page_init(page* self, size_t size, page_list_node* previous, page_list_node* next);
 void page_deinit(page* self);
 page* page_of_first_chunk(chunk* first);
+page* page_of_list_node(page_list_node* node);
+void page_list_show(page_list* self);
 
 /*
  * Allocator
  */
 typedef struct {
 	size_t page_size;
-	page_list_node tiny;
-	page_list_node small;
-	page_list_node large;
+	page_list tiny;
+	page_list small;
+	page_list large;
 } allocator;
 
 extern allocator global_allocator;
+
+void allocator_init(allocator* self);
+page_list_node* allocator_page_list(allocator *self, page_type type);
+
+// TODO: set the correct prority
+void __attribute__((constructor)) allocator_state_global(void);
+
+void allocator_state_global(void);
