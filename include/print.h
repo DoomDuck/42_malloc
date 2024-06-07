@@ -1,9 +1,12 @@
 #pragma once
 
+#include <stdbool.h>
 #include <unistd.h>
 
 /* File descriptor */
 typedef int fd;
+
+bool write_all(fd output, const void *bytes, size_t count);
 
 size_t string_length(const char *s);
 
