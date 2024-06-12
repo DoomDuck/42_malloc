@@ -3,34 +3,30 @@
 #include <log.h>
 #include <malloc.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/mman.h>
 
 void show_alloc_mem(void) {
-	log_fmt("tiny: %P\n", &global_allocator.tiny);
-	log_fmt("small: %P\n", &global_allocator.small);
-	log_fmt("large: %P\n", &global_allocator.large);
+	// TODO: use printing_instead of logging functions
+	log_info("tiny:\n%P", &global_allocator.tiny);
+	log_info("small:\n%P", &global_allocator.small);
+	log_info("large:\n%P", &global_allocator.large);
 }
 
 void *malloc(size_t allocation_size) {
-	log_fmt("%z <- malloc\n", allocation_size);
+	log_trace("%z <- malloc", allocation_size);
 
-	// For now only use large page algorithm
-	// TODO: Lookup good page type
-	page_type type = page_type_for_allocation_size(allocation_size);
-	// page_type type = page_type_large;
+	void *result = allocator_alloc(&global_allocator, allocation_size);
 
-	page *p = page_new(type, allocation_size);
-
-	if (!p)
-		return NULL;
-
-	log_fmt("%p <- malloc return\n", &p->first_chunk.body.payload);
-	return &p->first_chunk.body.payload;
+	return result;
 }
 
 void free(void *ptr) {
-	log_fmt("%p <- free\n", ptr);
+	show_alloc_mem();
+
+	log_error("Free is not working at this point");
+	exit(0);
+
+	log_trace("%p <- free", ptr);
 
 	// Noop on null pointer
 	if (!ptr)
@@ -45,7 +41,7 @@ void free(void *ptr) {
 }
 
 void *realloc(void *ptr, size_t new_size) {
-	log_fmt("ptr = %p, new_size = %z <- realloc\n", ptr, new_size);
+	log_trace("ptr = %p, new_size = %z <- realloc", ptr, new_size);
 
 	// On null ptr realloc is equivalent to malloc
 	if (!ptr)

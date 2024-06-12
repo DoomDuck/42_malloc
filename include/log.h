@@ -1,13 +1,32 @@
 #pragma once
 
-#include <stddef.h>
+#include <stdlib.h>
 
 #define LOG_FD 2
 
-void log_str(const char *s);
-void log_line(const char *s);
+#define LOG_LEVEL (log_level_trace)
 
-void log_size_t(size_t n);
-void log_pointer(void *p);
+typedef enum {
+	log_level_trace,
+	log_level_debug,
+	log_level_info,
+	log_level_warn,
+	log_level_error,
+	log_level_off,
+} log_level;
 
-void log_fmt(const char *fmt, ...);
+const char *log_level_name(log_level self);
+
+void log_at_level(log_level level, const char *fmt, ...);
+
+// Short hands for the above function
+#define log_trace(...) (log_at_level(log_level_trace, __VA_ARGS__))
+#define log_debug(...) (log_at_level(log_level_debug, __VA_ARGS__))
+#define log_info(...) (log_at_level(log_level_info, __VA_ARGS__))
+#define log_warn(...) (log_at_level(log_level_warn, __VA_ARGS__))
+#define log_error(...) (log_at_level(log_level_error, __VA_ARGS__))
+
+#define assert(condition, ...) if (!(condition)) { \
+		log_error(__VA_ARGS__); \
+		exit(1); \
+	}

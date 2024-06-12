@@ -5,21 +5,35 @@
 #include <stdbool.h>
 
 /* TODO: assess if I can use them */
-#include <string.h>
 #include <errno.h>
+#include <string.h>
 
-void log_str(const char *s) { print_string(LOG_FD, s); }
-
-void log_line(const char *s) {
-	print_string(LOG_FD, s);
-	print_string(LOG_FD, "\n");
+const char *log_level_name(log_level self) {
+	switch (self) {
+	case log_level_trace:
+		return "trace";
+	case log_level_debug:
+		return "debug";
+	case log_level_info:
+		return "info";
+	case log_level_warn:
+		return "warn";
+	case log_level_error:
+		return "error";
+	case log_level_off:
+		return "off";
+	}
+	return "unknown";
 }
 
-void log_size_t(size_t n) { print_size_t(LOG_FD, n); }
+void log_at_level(log_level level, const char *fmt, ...) {
+	if (level < LOG_LEVEL)
+		return;
 
-void log_pointer(void *p) { print_pointer(LOG_FD, p); }
+	print_string(LOG_FD, "[");
+	print_string(LOG_FD, log_level_name(level));
+	print_string(LOG_FD, "] : ");
 
-void log_fmt(const char *fmt, ...) {
 	size_t i = 0;
 	va_list arg_list;
 
@@ -30,16 +44,17 @@ void log_fmt(const char *fmt, ...) {
 	for (i = 0; fmt[i]; ++i) {
 		char c = fmt[i];
 		if (in_format) {
+			in_format = false;
 			if (c == 'p') {
-				log_pointer(va_arg(arg_list, void *));
+				print_pointer(LOG_FD, va_arg(arg_list, void *));
 			} else if (c == 's') {
-				log_str(va_arg(arg_list, char *));
+				print_string(LOG_FD, va_arg(arg_list, char *));
 			} else if (c == 'z') {
-				log_size_t(va_arg(arg_list, size_t));
+				print_size_t(LOG_FD, va_arg(arg_list, size_t));
 			} else if (c == 'P') {
-				page_list_show(va_arg(arg_list, page_list_node*));
+				page_list_show(va_arg(arg_list, page_list *));
 			} else if (c == 'e') {
-				log_str(strerror(errno));
+				print_string(LOG_FD, strerror(errno));
 			} else {
 				continue;
 			}
@@ -50,8 +65,8 @@ void log_fmt(const char *fmt, ...) {
 			written_up_to = i;
 			continue;
 		}
-		in_format = false;
 	}
 	va_end(arg_list);
 	write_all(LOG_FD, &fmt[written_up_to], i - written_up_to);
+	print_string(LOG_FD, "\n");
 }
