@@ -31,7 +31,8 @@ page_list *allocator_page_list(allocator *self, page_type type) {
 
 void global_allocator_init(void) { allocator_init(&global_allocator); }
 
-chunk_list_ref *allocator_available_chunk(allocator *self, size_t allocation_size) {
+chunk_list_ref *allocator_available_chunk(allocator *self,
+                                          size_t allocation_size) {
 	switch (page_type_for_allocation_size(allocation_size)) {
 	case page_type_tiny:
 		return page_list_available_chunk(&self->tiny, allocation_size);
@@ -65,6 +66,10 @@ void *allocator_alloc(allocator *self, size_t allocation_size) {
 	chunk_try_split(*ref, allocation_size);
 
 	chunk *c = chunk_extract_from_list(ref);
+
+	chunk *next = chunk_next(c);
+	if (next)
+		next->header.previous_in_use = true;
 
 	return &c->body.payload;
 }

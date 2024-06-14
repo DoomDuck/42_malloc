@@ -49,4 +49,5 @@ int main(void) {
 			assert(allocations[i][j] == (char)rand(), "Corrupted\n");
 	}
 	print("OK\n");
+	unoptimized_free(NULL);
 }

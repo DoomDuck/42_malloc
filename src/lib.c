@@ -21,20 +21,22 @@ void *malloc(size_t allocation_size) {
 }
 
 void free(void *ptr) {
-	show_alloc_mem();
-
-	log_error("Free is not working at this point");
-	exit(0);
-
 	log_trace("%p <- free", ptr);
 
 	// Noop on null pointer
-	if (!ptr)
+	if (!ptr) {
+		// TODO: remove
+		show_alloc_mem();
 		return;
+	}
 
 	chunk *c = chunk_of_payload(ptr);
-	// TODO: change later on
-	page *p = page_of_first_chunk(c);
+	page *p = page_of_chunk(c);
+
+	chunk *next = chunk_next(c);
+	if (next) {
+		// next->previous_chunk_size
+	}
 
 	// Delete page
 	page_deinit(p);

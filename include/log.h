@@ -26,7 +26,8 @@ void log_at_level(log_level level, const char *fmt, ...);
 #define log_warn(...) (log_at_level(log_level_warn, __VA_ARGS__))
 #define log_error(...) (log_at_level(log_level_error, __VA_ARGS__))
 
-#define assert(condition, ...) if (!(condition)) { \
-		log_error(__VA_ARGS__); \
-		exit(1); \
+#define assert(condition, ...)                                                 \
+	if (!(condition)) {                                                        \
+		log_error(__VA_ARGS__);                                                \
+		exit(1);                                                               \
 	}

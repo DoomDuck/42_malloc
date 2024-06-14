@@ -6,8 +6,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#define PAGE_TINY_MAX_ALLOCATION_SIZE 1024
-#define PAGE_SMALL_MAX_ALLOCATION_SIZE (1024 * 1024)
+#define PAGE_TINY_MAX_ALLOCATION_SIZE 128
+#define PAGE_SMALL_MAX_ALLOCATION_SIZE 1024
 
 page_type page_type_for_allocation_size(size_t size) {
 	if (size <= PAGE_TINY_MAX_ALLOCATION_SIZE)
@@ -36,7 +36,7 @@ size_t page_type_size(page_type self, size_t allocation_size) {
 	case page_type_small:
 		return 3 * global_allocator.page_size;
 	case page_type_large:
-		return round_up_to_multiple(allocation_size,
+		return round_up_to_multiple(allocation_size + PAGE_HEADER_SIZE,
 		                            global_allocator.page_size);
 	}
 }
@@ -98,8 +98,8 @@ void page_list_remove(page_list *self, page *page) {
 	}
 }
 
-page_list_node* page_list_node_of_page(page* p) {
-	return (page_list_node*)((uintptr_t)p - offsetof(page_list_node, page));
+page_list_node *page_list_node_of_page(page *p) {
+	return (page_list_node *)((uintptr_t)p - offsetof(page_list_node, page));
 }
 
 void page_init(page *self, size_t size) {
@@ -110,9 +110,9 @@ void page_init(page *self, size_t size) {
 	self->first_free = &self->first_chunk;
 
 	// Make first chunk fill all the available space
-	// TODO: check if this is a large page
 	chunk_init(&self->first_chunk, 0,
-	           size - offsetof(page_list_node, page.first_chunk), true);
+	           size - offsetof(page_list_node, page.first_chunk), false, false,
+	           NULL, NULL);
 }
 
 chunk_list_ref *page_find_free_chunk(page *self, size_t size) {
@@ -126,8 +126,16 @@ chunk_list_ref *page_find_free_chunk(page *self, size_t size) {
 
 page *page_of_first_chunk(chunk *first) {
 	log_trace("page_of_first_chunk");
-	// TODO: assert alignment
-	return (page *)((uintptr_t)first - offsetof(page, first_chunk));
+	page* result = (page *)((uintptr_t)first - offsetof(page, first_chunk));
+	// TODO: remove call to getpagesize
+	assert((uintptr_t)result % getpagesize() == 0, "Page is not alligned");
+	return result;
+}
+
+page *page_of_chunk(chunk *cursor) {
+	while (!chunk_is_first(cursor))
+		cursor = chunk_previous(cursor);
+	return (page_of_first_chunk(cursor));
 }
 
 void *page_end(page *self) {
@@ -136,10 +144,9 @@ void *page_end(page *self) {
 }
 
 void page_show_chunks(page *self) {
-	void *end = page_end(self);
 	chunk *cursor = &self->first_chunk;
 
-	for (; (void *)cursor < end; cursor = chunk_next_unchecked(cursor)) {
+	for (; cursor; cursor = chunk_next(cursor)) {
 		size_t alloc_size = chunk_body_size(cursor);
 		log_trace("\t %p - %p - : %z bytes", &cursor->body.payload,
 		          &cursor->body.payload + alloc_size, alloc_size);
@@ -168,4 +175,9 @@ chunk_list_ref *page_list_available_chunk(page_list *self, size_t size) {
 	}
 
 	return result;
+}
+
+void page_deinit(page *self) {
+	log_error("This function is not implemented");
+	exit(1);
 }

@@ -21,13 +21,12 @@ size_t round_up_to_multiple(size_t x, size_t factor);
 typedef struct {
 	size_t size_divided_by_16 : 8 * sizeof(size_t) - 3;
 	// For previous
-	bool arena : 1;
-	// TODO: do I keep it ?
-	bool mmaped : 1;
 	bool previous_in_use : 1;
+	bool in_use : 1;
+	bool has_next : 1;
 } chunk_header;
 
-typedef struct s_chunk* chunk_list_ref;
+typedef struct s_chunk *chunk_list_ref;
 
 typedef union {
 	uint8_t payload;
@@ -44,18 +43,24 @@ typedef struct s_chunk {
 } chunk;
 
 void chunk_init(chunk *self, size_t previous_chunk_size, size_t size,
-                bool mmaped);
+                bool has_next, bool previous_in_use, chunk *previous,
+                chunk *next);
 chunk *chunk_of_payload(void *payload);
 size_t chunk_size(chunk *self);
+bool chunk_is_first(chunk *self);
+
 void chunk_set_size(chunk *self, size_t size);
 size_t chunk_body_size(chunk *self);
-chunk *chunk_next_unchecked(chunk *self);
+chunk *chunk_next(chunk *self);
 void chunk_try_split(chunk *self, size_t allocation_size);
-chunk* chunk_extract_from_list(chunk_list_ref *ref);
+chunk *chunk_extract_from_list(chunk_list_ref *ref);
+chunk *chunk_previous(chunk *self);
 
 /*
  * Page
  */
+
+#define PAGE_HEADER_SIZE (offsetof(page_list_node, page.first_chunk))
 
 typedef enum {
 	page_type_tiny,
@@ -102,6 +107,8 @@ void page_deinit(page *self);
 void *page_end(page *self);
 
 page *page_of_first_chunk(chunk *first);
+page *page_of_chunk(chunk *cursor);
+
 chunk_list_ref *page_list_available_chunk(page_list *self, size_t size);
 
 /*
@@ -124,4 +131,3 @@ page_list *allocator_page_list(allocator *self, page_type type);
 void __attribute__((constructor(101))) global_allocator_init(void);
 
 void global_allocator_init(void);
-
