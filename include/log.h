@@ -1,5 +1,6 @@
 #pragma once
 
+/* Required for the assert macro */
 #include <stdlib.h>
 
 #define LOG_FD 2

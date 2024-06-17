@@ -1,9 +1,6 @@
-#include "mem.h"
-#include <internals.h>
 #include <log.h>
-#include <malloc.h>
-#include <stdlib.h>
-#include <sys/mman.h>
+#include <mem.h>
+#include <allocator.h>
 
 void show_alloc_mem(void) {
 	// TODO: use printing_instead of logging functions
@@ -25,21 +22,11 @@ void free(void *ptr) {
 
 	// Noop on null pointer
 	if (!ptr) {
-		// TODO: remove
 		show_alloc_mem();
 		return;
 	}
 
-	chunk *c = chunk_of_payload(ptr);
-	page *p = page_of_chunk(c);
-
-	chunk *next = chunk_next(c);
-	if (next) {
-		// next->previous_chunk_size
-	}
-
-	// Delete page
-	page_deinit(p);
+	allocator_dealloc(&global_allocator, ptr);
 }
 
 void *realloc(void *ptr, size_t new_size) {

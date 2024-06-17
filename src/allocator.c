@@ -1,9 +1,12 @@
-#include "malloc.h"
-#include <internals.h>
 #include <log.h>
+#include <page.h>
+#include <chunk.h>
+#include <utils.h>
+#include <page_list.h>
+#include <page_type.h>
+#include <allocator.h>
+
 #include <stdalign.h>
-#include <stdlib.h>
-#include <sys/mman.h>
 #include <unistd.h>
 
 allocator global_allocator;
@@ -31,18 +34,6 @@ page_list *allocator_page_list(allocator *self, page_type type) {
 
 void global_allocator_init(void) { allocator_init(&global_allocator); }
 
-chunk_list_ref *allocator_available_chunk(allocator *self,
-                                          size_t allocation_size) {
-	switch (page_type_for_allocation_size(allocation_size)) {
-	case page_type_tiny:
-		return page_list_available_chunk(&self->tiny, allocation_size);
-	case page_type_small:
-		return page_list_available_chunk(&self->small, allocation_size);
-	default:
-		return NULL;
-	}
-}
-
 void *allocator_alloc(allocator *self, size_t allocation_size) {
 	log_trace("self = %p, allocation_size = %z <- allocator_alloc", self,
 	          allocation_size);
@@ -50,26 +41,44 @@ void *allocator_alloc(allocator *self, size_t allocation_size) {
 	if (allocation_size < sizeof(chunk))
 		allocation_size = sizeof(chunk);
 	allocation_size = round_up_to_multiple(allocation_size, alignof(chunk));
+	
+	page_type type = page_type_for_allocation_size(allocation_size);
+	page_list *list = allocator_page_list(self, type);
+	page* p = NULL;
+	chunk * c = NULL; 
 
-	chunk_list_ref *ref = allocator_available_chunk(self, allocation_size);
-	if (!ref) {
-		log_trace("No available chunk, creating one");
-		page_type type = page_type_for_allocation_size(allocation_size);
+	if (type != page_type_large)
+		page_list_available_chunk(list, allocation_size, &p);
+
+	if (!c) {
 		size_t page_size = page_type_size(type, allocation_size);
-		page_list *list = allocator_page_list(self, type);
-		page *page_ptr = page_list_insert(list, page_size);
-		if (!page_ptr)
+		log_trace("No available chunk, creating one of size %z", page_size);
+		if (!(p = page_list_insert(list, page_size)))
 			return NULL;
-		ref = &page_ptr->first_free;
+		c = p->free;
 	}
 
-	chunk_try_split(*ref, allocation_size);
+	page_try_split(p, c, allocation_size);
 
-	chunk *c = chunk_extract_from_list(ref);
-
-	chunk *next = chunk_next(c);
-	if (next)
-		next->header.previous_in_use = true;
+	page_mark_in_use(p, c);
 
 	return &c->body.payload;
+}
+
+void allocator_dealloc(allocator* self, void* address) {
+	chunk *c = chunk_of_payload(address);
+	page *p = page_of_chunk(c);
+
+	page_type type = page_type_for_allocation_size(chunk_body_size(c));
+	page_list* list = allocator_page_list(self, type);
+
+	page_mark_free(p, c);
+
+	page_try_fuse(p, c);
+
+	chunk* previous = chunk_previous(c);
+	if (previous)
+		page_try_fuse(p, previous);
+
+	if (page_is_empty(p)) page_list_remove(list, p);
 }

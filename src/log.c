@@ -1,6 +1,7 @@
-#include "internals.h"
 #include <log.h>
+#include <page_list.h>
 #include <print.h>
+
 #include <stdarg.h>
 #include <stdbool.h>
 

@@ -49,5 +49,11 @@ int main(void) {
 			assert(allocations[i][j] == (char)rand(), "Corrupted\n");
 	}
 	print("OK\n");
+	for (size_t len = ALLOC_COUNT; len > 0;) {
+		size_t i = rand() % len;
+		free(allocations[i]);
+		allocations[i] = allocations[--len];
+	}
+	print("Everything is freed\n");
 	unoptimized_free(NULL);
 }
