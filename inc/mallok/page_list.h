@@ -29,7 +29,8 @@ page *page_list_insert(page_list *self, size_t page_size);
 void page_list_remove(page_list *self, page *page);
 
 /* Find available chunk */
-chunk *page_list_available_chunk(page_list *self, size_t size, page** page_of_chunk);
+chunk *page_list_available_chunk(page_list *self, size_t size,
+                                 page **page_of_chunk);
 
 /* Display */
 void page_list_show(page_list *self);

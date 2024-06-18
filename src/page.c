@@ -1,5 +1,5 @@
-#include <mallok/log.h>
 #include <mallok/chunk.h>
+#include <mallok/log.h>
 #include <mallok/page.h>
 #include <mallok/page_list.h>
 
@@ -22,7 +22,8 @@ void page_deinit(page *self) {
 }
 
 bool page_is_empty(page *self) {
-	return (!self->first_chunk.header.in_use && !chunk_next(&self->first_chunk));
+	return (!self->first_chunk.header.in_use &&
+	        !chunk_next(&self->first_chunk));
 }
 
 page *page_of_first_chunk(chunk *first) {
@@ -37,7 +38,7 @@ page *page_of_chunk(chunk *cursor) {
 	return (page_of_first_chunk(cursor));
 }
 
-bool page_try_split(page* self, chunk* to_split, size_t allocation_size) {
+bool page_try_split(page *self, chunk *to_split, size_t allocation_size) {
 	log_trace("self = %p, allocation_size = %z <- page_try_split_chunk", self,
 	          allocation_size);
 
@@ -51,20 +52,21 @@ bool page_try_split(page* self, chunk* to_split, size_t allocation_size) {
 	size_t size = CHUNK_HEADER_SIZE + allocation_size;
 
 	chunk *next = (chunk *)((uintptr_t)to_split + size);
-	chunk_init(next, size, chunk_size(to_split) - size, to_split->header.has_next,
-	           false, to_split, to_split->body.list.next);
+	chunk_init(next, size, chunk_size(to_split) - size,
+	           to_split->header.has_next, false, to_split,
+	           to_split->body.list.next);
 
 	chunk_set_size(to_split, size);
 	to_split->header.has_next = true;
 	to_split->body.list.next = next;
-	
+
 	return true;
 }
 
-bool page_try_fuse(page* self, chunk* c) {
+bool page_try_fuse(page *self, chunk *c) {
 	assert(!c->header.in_use, "Trying to fuse a chunk in use");
 
-	chunk* next = chunk_next(c);
+	chunk *next = chunk_next(c);
 
 	if (!next || next->header.in_use)
 		return false;
@@ -103,7 +105,7 @@ chunk *page_find_free(page *self, size_t size) {
 	return cursor;
 }
 
-void page_mark_in_use(page* self, chunk* c) {
+void page_mark_in_use(page *self, chunk *c) {
 	assert(!c->header.in_use, "Trying to use a busy chunk");
 	c->header.in_use = true;
 
@@ -112,18 +114,18 @@ void page_mark_in_use(page* self, chunk* c) {
 		next->header.previous_in_use = true;
 
 	/* Remove from free list */
-	chunk* next_free = c->body.list.next;
+	chunk *next_free = c->body.list.next;
 	if (next_free)
 		next_free->body.list.previous = c->body.list.previous;
 
-	chunk* previous_free = c->body.list.previous;
+	chunk *previous_free = c->body.list.previous;
 	if (previous_free)
 		previous_free->body.list.next = next_free;
 	else
 		self->free = next_free;
 }
 
-void page_mark_free(page* self, chunk* c) {
+void page_mark_free(page *self, chunk *c) {
 	assert(c->header.in_use, "Trying to free a chunk that is already free");
 	c->header.in_use = false;
 

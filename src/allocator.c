@@ -1,11 +1,11 @@
+#include <mallok/allocator.h>
+#include <mallok/chunk.h>
 #include <mallok/log.h>
 #include <mallok/mem.h>
 #include <mallok/page.h>
-#include <mallok/chunk.h>
-#include <mallok/utils.h>
 #include <mallok/page_list.h>
 #include <mallok/page_type.h>
-#include <mallok/allocator.h>
+#include <mallok/utils.h>
 
 #include <stdalign.h>
 #include <stdlib.h>
@@ -14,7 +14,7 @@
 allocator global_allocator;
 
 void allocator_init(allocator *self) {
-	const char* log_env_var = getenv("MALLOK_LOG");
+	const char *log_env_var = getenv("MALLOK_LOG");
 	self->logging_level = log_level_off;
 	if (log_env_var)
 		self->logging_level = log_level_from_name(log_env_var);
@@ -47,14 +47,14 @@ void *allocator_alloc(allocator *self, size_t allocation_size) {
 	if (allocation_size < sizeof(chunk))
 		allocation_size = sizeof(chunk);
 	allocation_size = round_up_to_multiple(allocation_size, alignof(chunk));
-	
+
 	page_type type = page_type_for_allocation_size(allocation_size);
 	page_list *list = allocator_page_list(self, type);
-	page* p = NULL;
-	chunk * c = NULL; 
+	page *p = NULL;
+	chunk *c = NULL;
 
 	if (type != page_type_large)
-		page_list_available_chunk(list, allocation_size, &p);
+		c = page_list_available_chunk(list, allocation_size, &p);
 
 	if (!c) {
 		size_t page_size = page_type_size(type, allocation_size);
@@ -71,25 +71,26 @@ void *allocator_alloc(allocator *self, size_t allocation_size) {
 	return &c->body.payload;
 }
 
-void allocator_dealloc(allocator* self, void* address) {
+void allocator_dealloc(allocator *self, void *address) {
 	chunk *c = chunk_of_payload(address);
 	page *p = page_of_chunk(c);
 
 	page_type type = page_type_for_allocation_size(chunk_body_size(c));
-	page_list* list = allocator_page_list(self, type);
+	page_list *list = allocator_page_list(self, type);
 
 	page_mark_free(p, c);
 
 	page_try_fuse(p, c);
 
-	chunk* previous = chunk_previous(c);
+	chunk *previous = chunk_previous(c);
 	if (previous)
 		page_try_fuse(p, previous);
 
-	if (page_is_empty(p)) page_list_remove(list, p);
+	if (page_is_empty(p))
+		page_list_remove(list, p);
 }
 
-void* allocator_realloc(allocator *self, void* address, size_t new_size) {
+void *allocator_realloc(allocator *self, void *address, size_t new_size) {
 	// On null pointer realloc is equivalent to malloc
 	if (!address)
 		return allocator_alloc(self, new_size);
@@ -108,5 +109,4 @@ void* allocator_realloc(allocator *self, void* address, size_t new_size) {
 	allocator_dealloc(self, address);
 
 	return new_place;
-
 }

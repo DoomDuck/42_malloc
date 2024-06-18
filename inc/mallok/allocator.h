@@ -20,8 +20,8 @@ void allocator_deinit(allocator *self);
 
 /* Allocation function */
 void *allocator_alloc(allocator *self, size_t allocation_size);
-void allocator_dealloc(allocator *self, void* address);
-void *allocator_realloc(allocator *self, void* address, size_t new_size);
+void allocator_dealloc(allocator *self, void *address);
+void *allocator_realloc(allocator *self, void *address, size_t new_size);
 
 /* Get page list of type */
 page_list *allocator_page_list(allocator *self, page_type type);

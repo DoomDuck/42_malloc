@@ -1,15 +1,16 @@
 #include <mallok/log.h>
-#include <mallok/print.h>
 #include <mallok/page_list.h>
+#include <mallok/print.h>
 
-#include <stdarg.h>
 #include <errno.h>
-#include <string.h>
+#include <stdarg.h>
 #include <stdbool.h>
+#include <string.h>
 
-bool string_equal(const char* a, const char* b) {
+bool string_equal(const char *a, const char *b) {
 	size_t i = 0;
-	for (; a[i] && a[i] == b[i]; ++i);
+	for (; a[i] && a[i] == b[i]; ++i)
+		;
 	return a[i] == b[i];
 }
 
@@ -31,7 +32,7 @@ const char *log_level_name(log_level self) {
 	return "unknown";
 }
 
-log_level log_level_from_name(const char* name) {
+log_level log_level_from_name(const char *name) {
 	for (log_level level = log_level_trace; level <= log_level_off; ++level) {
 		if (string_equal(name, log_level_name(level)))
 			return level;

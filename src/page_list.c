@@ -2,8 +2,8 @@
 #include <mallok/page.h>
 #include <mallok/page_list.h>
 
-#include <unistd.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 void page_list_init(page_list *self) {
 	self->first = NULL;
@@ -12,7 +12,6 @@ void page_list_init(page_list *self) {
 }
 
 page *page_list_insert(page_list *self, size_t page_size) {
-
 	// Ask for new page
 	page_list_node *node =
 	    mmap(NULL,                   // To address is required
@@ -78,17 +77,20 @@ void page_list_show(page_list *self) {
 	}
 }
 
-chunk *page_list_available_chunk(page_list *self, size_t size, page** page_of_chunk) {
+chunk *page_list_available_chunk(page_list *self, size_t size,
+                                 page **page_of_chunk) {
 	log_trace("self = %p, size = %z <- page_list_available_chunk", self, size);
 	page_list_node *cursor = self->first;
 	chunk *result = NULL;
 	*page_of_chunk = NULL;
 
-	for (; cursor && !result; cursor = cursor->next) {
-		result = page_find_free(&cursor->page, size);
+	for (; cursor; cursor = cursor->next) {
+		if ((result = page_find_free(&cursor->page, size)))
+			break;
 	}
 
-	if (cursor) *page_of_chunk = &cursor->page;
+	if (cursor)
+		*page_of_chunk = &cursor->page;
 
 	return result;
 }

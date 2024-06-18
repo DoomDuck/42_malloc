@@ -1,5 +1,5 @@
-#include <mallok/log.h>
 #include <mallok/chunk.h>
+#include <mallok/log.h>
 
 #include <stdalign.h>
 
@@ -21,7 +21,7 @@ void chunk_set_size(chunk *self, size_t size) {
 	assert(size % 16 == 0, "Invalid chunk size %z mod 16 == %z", size,
 	       size % 16);
 
-	chunk* next = chunk_next(self);
+	chunk *next = chunk_next(self);
 	if (next)
 		next->previous_chunk_size = size;
 
