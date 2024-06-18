@@ -2,6 +2,7 @@
 
 #include <mallok/chunk.h>
 #include <stddef.h>
+#include "mallok/print.h"
 
 #define AREA_HEADER_SIZE (offsetof(area_list_node, area.first_chunk))
 
@@ -30,4 +31,4 @@ void area_mark_in_use(area* self, chunk* c);
 void area_mark_free(area* self, chunk* c);
 
 /* Display */
-void area_show_chunks(area* self);
+void area_show_chunks(area* self, fd output);

@@ -2,6 +2,7 @@
 #include <mallok/area_list.h>
 #include <mallok/chunk.h>
 #include <mallok/log.h>
+#include "mallok/print.h"
 
 void area_init(area* self, size_t size) {
     log_trace("self = %p, size = %z <- area_init", self, size);
@@ -97,13 +98,14 @@ void* area_end(area* self) {
     return (void*)((uintptr_t)node + self->size);
 }
 
-void area_show_chunks(area* self) {
+void area_show_chunks(area* self, fd output) {
     chunk* cursor = &self->first_chunk;
 
     for (; cursor; cursor = chunk_next(cursor)) {
         size_t alloc_size = chunk_body_size(cursor);
-        log_trace(
-            "\t %p - %p - : %z bytes",
+        print_fmt(
+			output,
+            "\t %p - %p - : %z bytes\n",
             &cursor->body.payload,
             &cursor->body.payload + alloc_size,
             alloc_size

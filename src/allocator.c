@@ -12,28 +12,36 @@
 allocator global_allocator;
 
 void allocator_init(allocator* self) {
+	// Initialize logging system
     const char* log_env_var = getenv("MALLOK_LOG");
     self->logging_level = log_level_error;
     if (log_env_var)
         self->logging_level = log_level_from_name(log_env_var);
+
+	// Fetch page_size
     self->page_size = getpagesize();
     log_info("%z <- page size", self->page_size);
-    // TODO: initalize minimal amount of areas
+
+	// Initialize areas
     area_list_init(&self->tiny);
     area_list_init(&self->small);
     area_list_init(&self->large);
+
+	// Preallocate some areas
+	area_list_insert(&self->tiny, AREA_TINY_SIZE);
+	area_list_insert(&self->small, AREA_SMALL_SIZE);
 }
 
 size_t allocator_area_size_for_size(allocator* self, size_t allocation_size) {
-    if (allocation_size <= AREA_TINY_MAX_ALLOCATION_SIZE)
-        return AREA_TINY_PAGE_COUNT * self->page_size;
-    else if (allocation_size <= AREA_SMALL_MAX_ALLOCATION_SIZE)
-        return AREA_SMALL_PAGE_COUNT * self->page_size;
-    else
-        return round_up_to_multiple(
-            allocation_size + AREA_HEADER_SIZE + CHUNK_HEADER_SIZE,
-            global_allocator.page_size
-        );
+    size_t result = 0;
+    if (allocation_size <= AREA_TINY_MAX_ALLOCATION_SIZE) {
+        result = AREA_TINY_SIZE;
+    } else if (allocation_size <= AREA_SMALL_MAX_ALLOCATION_SIZE) {
+        result = AREA_SMALL_SIZE;
+    } else {
+        result = allocation_size + AREA_HEADER_SIZE + CHUNK_HEADER_SIZE;
+    }
+    return round_up_to_multiple(result, self->page_size);
 }
 
 area_list*

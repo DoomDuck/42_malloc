@@ -4,6 +4,9 @@
 #include <unistd.h>
 
 #define ALLOC_COUNT 1000
+#define TINY_ALLOC_MAX_SIZE 128
+#define SMALL_ALLOC_MAX_SIZE 1024
+#define LARGE_ALLOC_MAX_SIZE 10240
 
 void print(const char* s) {
     write(1, s, strlen(s));
@@ -19,10 +22,10 @@ void assert(bool condition, const char* message) {
 size_t next_alloc_size(void) {
     int category = rand() % 3;
     if (category == 0)
-        return (size_t)rand() % 128;
+        return (size_t)rand() % TINY_ALLOC_MAX_SIZE;
     else if (category == 1)
-        return (size_t)rand() % 1024;
-    return (size_t)rand() % 10240;
+        return (size_t)rand() % SMALL_ALLOC_MAX_SIZE;
+    return (size_t)rand() % LARGE_ALLOC_MAX_SIZE;
 }
 
 void unoptimized_free(void* ptr) {
@@ -59,5 +62,4 @@ int main(void) {
         allocations[i] = allocations[--len];
     }
     print("Everything is freed\n");
-    unoptimized_free(NULL);
 }

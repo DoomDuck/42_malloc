@@ -1,7 +1,11 @@
+#include <errno.h>
 #include <mallok/print.h>
+
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <unistd.h>
+#include "mallok/area_list.h"
 
 size_t string_length(const char* s) {
     size_t length = 0;
@@ -59,4 +63,43 @@ void print_pointer(fd output, void* p) {
     *--cursor = '0';
 
     print_string(output, cursor);
+}
+
+void print_fmt(fd output, const char* fmt, ...) {
+    va_list arg_list;
+    va_start(arg_list, fmt);
+	print_vfmt(output, fmt, arg_list);
+    va_end(arg_list);
+}
+
+void print_vfmt(fd output, const char* fmt, va_list arg_list) {
+    size_t i = 0;
+    size_t written_up_to = 0;
+    bool in_format = false;
+    for (i = 0; fmt[i]; ++i) {
+        char c = fmt[i];
+        if (in_format) {
+            in_format = false;
+            if (c == 'p') {
+                print_pointer(output, va_arg(arg_list, void*));
+            } else if (c == 's') {
+                print_string(output, va_arg(arg_list, char*));
+            } else if (c == 'z') {
+                print_size_t(output, va_arg(arg_list, size_t));
+            } else if (c == 'P') {
+                area_list_show(va_arg(arg_list, area_list*), output);
+            } else if (c == 'e') {
+                print_string(output, strerror(errno));
+            } else {
+                continue;
+            }
+            written_up_to = i + 1;
+        } else if (fmt[i] == '%') {
+            in_format = true;
+            write_all(output, &fmt[written_up_to], i - written_up_to);
+            written_up_to = i;
+            continue;
+        }
+    }
+    write_all(output, &fmt[written_up_to], i - written_up_to);
 }

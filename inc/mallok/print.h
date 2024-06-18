@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <unistd.h>
+#include <stdarg.h>
 
 /* File descriptor */
 typedef int fd;
@@ -15,3 +16,7 @@ void print_string(fd output, const char* s);
 void print_size_t(fd output, size_t n);
 
 void print_pointer(fd output, void* p);
+
+void print_fmt(fd output, const char* fmt, ...);
+
+void print_vfmt(fd output, const char* fmt, va_list arg_list);

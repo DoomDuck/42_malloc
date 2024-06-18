@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mallok/area.h>
+#include "mallok/print.h"
 
 struct area_list_node;
 typedef struct s_area_list_node area_list_node;
@@ -33,4 +34,4 @@ chunk*
 area_list_available_chunk(area_list* self, size_t size, area** area_of_chunk);
 
 /* Display */
-void area_list_show(area_list* self);
+void area_list_show(area_list* self, fd output);
