@@ -1,2 +1,2 @@
-set exec-wrapper ./run.sh
+set exec-wrapper ./script/run.sh
 set disable-randomization on
