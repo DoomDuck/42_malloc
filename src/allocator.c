@@ -1,4 +1,5 @@
 #include <log.h>
+#include <mem.h>
 #include <page.h>
 #include <chunk.h>
 #include <utils.h>
@@ -81,4 +82,26 @@ void allocator_dealloc(allocator* self, void* address) {
 		page_try_fuse(p, previous);
 
 	if (page_is_empty(p)) page_list_remove(list, p);
+}
+
+void* allocator_realloc(allocator *self, void* address, size_t new_size) {
+	// On null pointer realloc is equivalent to malloc
+	if (!address)
+		return allocator_alloc(self, new_size);
+
+	chunk *c = chunk_of_payload(address);
+
+	size_t previous_size = chunk_size(c);
+
+	void *new_place = allocator_alloc(self, new_size);
+
+	size_t copied_amount = previous_size;
+	if (previous_size > new_size)
+		copied_amount = new_size;
+	memory_copy(new_place, address, copied_amount);
+
+	allocator_dealloc(self, address);
+
+	return new_place;
+
 }

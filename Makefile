@@ -1,4 +1,8 @@
-NAME = libmalloc.so
+ifeq ($(HOSTTYPE),)
+	HOSTTYPE := $(shell uname -m)_$(shell uname -s)
+endif
+
+NAME = libft_malloc_$(HOSTTYPE).so
 
 CC = gcc
 RM = rm -rf
@@ -26,8 +30,9 @@ fclean: clean
 re: fclean
 	$(MAKE) all
 
-%.so: $(OBJECTS)
+$(NAME): $(OBJECTS)
 	$(CC) -o $@ --shared $^
+	ln -s $@ libft_malloc.so
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@ mkdir -p $(@D)

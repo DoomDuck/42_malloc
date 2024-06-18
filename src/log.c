@@ -3,11 +3,9 @@
 #include <print.h>
 
 #include <stdarg.h>
-#include <stdbool.h>
-
-/* TODO: assess if I can use them */
 #include <errno.h>
 #include <string.h>
+#include <stdbool.h>
 
 const char *log_level_name(log_level self) {
 	switch (self) {
