@@ -4,7 +4,6 @@
 #include <mallok/mem.h>
 #include <mallok/page.h>
 #include <mallok/page_list.h>
-#include <mallok/page_type.h>
 #include <mallok/utils.h>
 
 #include <stdalign.h>
@@ -26,16 +25,25 @@ void allocator_init(allocator *self) {
 	page_list_init(&self->large);
 }
 
-page_list *allocator_page_list(allocator *self, page_type type) {
-	switch (type) {
-	default:
-	case page_type_tiny:
+size_t allocator_page_size_for_size(allocator* self, size_t allocation_size) {
+	if (allocation_size <= PAGE_TINY_MAX_ALLOCATION_SIZE)
+		return self->page_size;
+	else if (allocation_size <= PAGE_SMALL_MAX_ALLOCATION_SIZE)
+		return 3 * self->page_size;
+	else
+		return round_up_to_multiple(
+			allocation_size + PAGE_HEADER_SIZE + CHUNK_HEADER_SIZE,
+		    global_allocator.page_size
+		);
+}
+
+page_list* allocator_page_list_for_size(allocator* self, size_t allocation_size) {
+	if (allocation_size <= PAGE_TINY_MAX_ALLOCATION_SIZE)
 		return &self->tiny;
-	case page_type_small:
+	else if (allocation_size <= PAGE_SMALL_MAX_ALLOCATION_SIZE)
 		return &self->small;
-	case page_type_large:
+	else
 		return &self->large;
-	}
 }
 
 void global_allocator_init(void) { allocator_init(&global_allocator); }
@@ -48,16 +56,15 @@ void *allocator_alloc(allocator *self, size_t allocation_size) {
 		allocation_size = sizeof(chunk);
 	allocation_size = round_up_to_multiple(allocation_size, alignof(chunk));
 
-	page_type type = page_type_for_allocation_size(allocation_size);
-	page_list *list = allocator_page_list(self, type);
+	page_list *list = allocator_page_list_for_size(self, allocation_size);
 	page *p = NULL;
 	chunk *c = NULL;
 
-	if (type != page_type_large)
+	if (list != &self->large)
 		c = page_list_available_chunk(list, allocation_size, &p);
 
 	if (!c) {
-		size_t page_size = page_type_size(type, allocation_size);
+		size_t page_size = allocator_page_size_for_size(self, allocation_size);
 		log_trace("No available chunk, creating one of size %z", page_size);
 		if (!(p = page_list_insert(list, page_size)))
 			return NULL;
@@ -75,8 +82,7 @@ void allocator_dealloc(allocator *self, void *address) {
 	chunk *c = chunk_of_payload(address);
 	page *p = page_of_chunk(c);
 
-	page_type type = page_type_for_allocation_size(chunk_body_size(c));
-	page_list *list = allocator_page_list(self, type);
+	page_list *list = allocator_page_list_for_size(self, chunk_body_size(c));
 
 	page_mark_free(p, c);
 

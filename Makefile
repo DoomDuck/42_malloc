@@ -11,7 +11,7 @@ INC_DIR = inc
 SRC_DIR = src
 OBJ_DIR = .obj
 
-CFLAGS = -I $(INC_DIR) -Wall -Wextra -pedantic -fPIC -ggdb -O0
+CFLAGS = -I $(INC_DIR) -Wall -Wextra -pedantic -fPIC -ggdb
 SOURCES = $(shell find src/ -type f -name '*.c')
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
