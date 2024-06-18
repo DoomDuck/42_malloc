@@ -16,11 +16,6 @@ void area_init(area *self, size_t size) {
 	           NULL, NULL);
 }
 
-void area_deinit(area *self) {
-	log_error("This function is not implemented");
-	exit(1);
-}
-
 bool area_is_empty(area *self) {
 	return (!self->first_chunk.header.in_use &&
 	        !chunk_next(&self->first_chunk));

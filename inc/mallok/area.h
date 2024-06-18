@@ -14,7 +14,6 @@ typedef struct {
 
 /* Lifecycle */
 void area_init(area *self, size_t size);
-void area_deinit(area *self);
 bool area_is_empty(area *self);
 
 /* Recover a area form a chunk */
