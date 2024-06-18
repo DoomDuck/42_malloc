@@ -1,5 +1,5 @@
 #include <mallok/log.h>
-#include <mallok/page_list.h>
+#include <mallok/area_list.h>
 #include <mallok/print.h>
 
 #include <errno.h>
@@ -66,7 +66,7 @@ void log_at_level(log_level level, const char *fmt, ...) {
 			} else if (c == 'z') {
 				print_size_t(LOG_FD, va_arg(arg_list, size_t));
 			} else if (c == 'P') {
-				page_list_show(va_arg(arg_list, page_list *));
+				area_list_show(va_arg(arg_list, area_list *));
 			} else if (c == 'e') {
 				print_string(LOG_FD, strerror(errno));
 			} else {

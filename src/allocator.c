@@ -2,8 +2,8 @@
 #include <mallok/chunk.h>
 #include <mallok/log.h>
 #include <mallok/mem.h>
-#include <mallok/page.h>
-#include <mallok/page_list.h>
+#include <mallok/area.h>
+#include <mallok/area_list.h>
 #include <mallok/utils.h>
 
 #include <stdalign.h>
@@ -19,28 +19,28 @@ void allocator_init(allocator *self) {
 		self->logging_level = log_level_from_name(log_env_var);
 	self->page_size = getpagesize();
 	log_info("%z <- page size", self->page_size);
-	// TODO: initalize minimal amount of pages
-	page_list_init(&self->tiny);
-	page_list_init(&self->small);
-	page_list_init(&self->large);
+	// TODO: initalize minimal amount of areas
+	area_list_init(&self->tiny);
+	area_list_init(&self->small);
+	area_list_init(&self->large);
 }
 
-size_t allocator_page_size_for_size(allocator* self, size_t allocation_size) {
-	if (allocation_size <= PAGE_TINY_MAX_ALLOCATION_SIZE)
+size_t allocator_area_size_for_size(allocator* self, size_t allocation_size) {
+	if (allocation_size <= AREA_TINY_MAX_ALLOCATION_SIZE)
 		return self->page_size;
-	else if (allocation_size <= PAGE_SMALL_MAX_ALLOCATION_SIZE)
+	else if (allocation_size <= AREA_SMALL_MAX_ALLOCATION_SIZE)
 		return 3 * self->page_size;
 	else
 		return round_up_to_multiple(
-			allocation_size + PAGE_HEADER_SIZE + CHUNK_HEADER_SIZE,
+			allocation_size + AREA_HEADER_SIZE + CHUNK_HEADER_SIZE,
 		    global_allocator.page_size
 		);
 }
 
-page_list* allocator_page_list_for_size(allocator* self, size_t allocation_size) {
-	if (allocation_size <= PAGE_TINY_MAX_ALLOCATION_SIZE)
+area_list* allocator_area_list_for_size(allocator* self, size_t allocation_size) {
+	if (allocation_size <= AREA_TINY_MAX_ALLOCATION_SIZE)
 		return &self->tiny;
-	else if (allocation_size <= PAGE_SMALL_MAX_ALLOCATION_SIZE)
+	else if (allocation_size <= AREA_SMALL_MAX_ALLOCATION_SIZE)
 		return &self->small;
 	else
 		return &self->large;
@@ -56,44 +56,44 @@ void *allocator_alloc(allocator *self, size_t allocation_size) {
 		allocation_size = sizeof(chunk);
 	allocation_size = round_up_to_multiple(allocation_size, alignof(chunk));
 
-	page_list *list = allocator_page_list_for_size(self, allocation_size);
-	page *p = NULL;
+	area_list *list = allocator_area_list_for_size(self, allocation_size);
+	area *a = NULL;
 	chunk *c = NULL;
 
 	if (list != &self->large)
-		c = page_list_available_chunk(list, allocation_size, &p);
+		c = area_list_available_chunk(list, allocation_size, &a);
 
 	if (!c) {
-		size_t page_size = allocator_page_size_for_size(self, allocation_size);
-		log_trace("No available chunk, creating one of size %z", page_size);
-		if (!(p = page_list_insert(list, page_size)))
+		size_t area_size = allocator_area_size_for_size(self, allocation_size);
+		log_trace("No available chunk, creating one of size %z", area_size);
+		if (!(a = area_list_insert(list, area_size)))
 			return NULL;
-		c = p->free;
+		c = a->free;
 	}
 
-	page_try_split(p, c, allocation_size);
+	area_try_split(a, c, allocation_size);
 
-	page_mark_in_use(p, c);
+	area_mark_in_use(a, c);
 
 	return &c->body.payload;
 }
 
 void allocator_dealloc(allocator *self, void *address) {
 	chunk *c = chunk_of_payload(address);
-	page *p = page_of_chunk(c);
+	area *a = area_of_chunk(c);
 
-	page_list *list = allocator_page_list_for_size(self, chunk_body_size(c));
+	area_list *list = allocator_area_list_for_size(self, chunk_body_size(c));
 
-	page_mark_free(p, c);
+	area_mark_free(a, c);
 
-	page_try_fuse(p, c);
+	area_try_fuse(a, c);
 
 	chunk *previous = chunk_previous(c);
 	if (!c->header.previous_in_use && previous)
-		page_try_fuse(p, previous);
+		area_try_fuse(a, previous);
 
-	if (page_is_empty(p))
-		page_list_remove(list, p);
+	if (area_is_empty(a))
+		area_list_remove(list, a);
 }
 
 void *allocator_realloc(allocator *self, void *address, size_t new_size) {

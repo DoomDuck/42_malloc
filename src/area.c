@@ -1,10 +1,10 @@
 #include <mallok/chunk.h>
 #include <mallok/log.h>
-#include <mallok/page.h>
-#include <mallok/page_list.h>
+#include <mallok/area.h>
+#include <mallok/area_list.h>
 
-void page_init(page *self, size_t size) {
-	log_trace("self = %p, size = %z <- page_init", self, size);
+void area_init(area *self, size_t size) {
+	log_trace("self = %p, size = %z <- area_init", self, size);
 
 	// Initialize struct
 	self->size = size;
@@ -12,34 +12,34 @@ void page_init(page *self, size_t size) {
 
 	// Make first chunk fill all the available space
 	chunk_init(&self->first_chunk, 0,
-	           size - offsetof(page_list_node, page.first_chunk), false, false,
+	           size - offsetof(area_list_node, area.first_chunk), false, false,
 	           NULL, NULL);
 }
 
-void page_deinit(page *self) {
+void area_deinit(area *self) {
 	log_error("This function is not implemented");
 	exit(1);
 }
 
-bool page_is_empty(page *self) {
+bool area_is_empty(area *self) {
 	return (!self->first_chunk.header.in_use &&
 	        !chunk_next(&self->first_chunk));
 }
 
-page *page_of_first_chunk(chunk *first) {
-	log_trace("page_of_first_chunk");
-	page *result = (page *)((uintptr_t)first - offsetof(page, first_chunk));
+area *area_of_first_chunk(chunk *first) {
+	log_trace("area_of_first_chunk");
+	area *result = (area *)((uintptr_t)first - offsetof(area, first_chunk));
 	return result;
 }
 
-page *page_of_chunk(chunk *cursor) {
+area *area_of_chunk(chunk *cursor) {
 	while (!chunk_is_first(cursor))
 		cursor = chunk_previous(cursor);
-	return (page_of_first_chunk(cursor));
+	return (area_of_first_chunk(cursor));
 }
 
-bool page_try_split(page *self, chunk *to_split, size_t allocation_size) {
-	log_trace("self = %p, allocation_size = %z <- page_try_split_chunk", self,
+bool area_try_split(area *self, chunk *to_split, size_t allocation_size) {
+	log_trace("self = %p, allocation_size = %z <- area_try_split_chunk", self,
 	          allocation_size);
 
 	assert(!to_split->header.in_use, "Trying to split a chunk in use");
@@ -63,7 +63,7 @@ bool page_try_split(page *self, chunk *to_split, size_t allocation_size) {
 	return true;
 }
 
-bool page_try_fuse(page *self, chunk *c) {
+bool area_try_fuse(area *self, chunk *c) {
 	assert(!c->header.in_use, "Trying to fuse a chunk in use");
 
 	chunk *next = chunk_next(c);
@@ -72,7 +72,7 @@ bool page_try_fuse(page *self, chunk *c) {
 		return false;
 
 	/* TODO: use a better function */
-	page_mark_in_use(self, next);
+	area_mark_in_use(self, next);
 
 	c->header.has_next = next->header.has_next;
 	size_t combined_size = chunk_size(c) + chunk_size(next);
@@ -81,12 +81,12 @@ bool page_try_fuse(page *self, chunk *c) {
 	return true;
 }
 
-void *page_end(page *self) {
-	page_list_node *node = page_list_node_of_page(self);
+void *area_end(area *self) {
+	area_list_node *node = area_list_node_of_area(self);
 	return (void *)((uintptr_t)node + self->size);
 }
 
-void page_show_chunks(page *self) {
+void area_show_chunks(area *self) {
 	chunk *cursor = &self->first_chunk;
 
 	for (; cursor; cursor = chunk_next(cursor)) {
@@ -96,8 +96,8 @@ void page_show_chunks(page *self) {
 	}
 }
 
-chunk *page_find_free(page *self, size_t size) {
-	log_trace("self = %p, size = %z <- page_find_free", self, size);
+chunk *area_find_free(area *self, size_t size) {
+	log_trace("self = %p, size = %z <- area_find_free", self, size);
 	chunk *cursor = self->free;
 	while (cursor && chunk_body_size(cursor) < size) {
 		cursor = cursor->body.list.next;
@@ -105,7 +105,7 @@ chunk *page_find_free(page *self, size_t size) {
 	return cursor;
 }
 
-void page_mark_in_use(page *self, chunk *c) {
+void area_mark_in_use(area *self, chunk *c) {
 	assert(!c->header.in_use, "Trying to use a busy chunk");
 	c->header.in_use = true;
 
@@ -125,7 +125,7 @@ void page_mark_in_use(page *self, chunk *c) {
 		self->free = next_free;
 }
 
-void page_mark_free(page *self, chunk *c) {
+void area_mark_free(area *self, chunk *c) {
 	assert(c->header.in_use, "Trying to free a chunk that is already free");
 	c->header.in_use = false;
 

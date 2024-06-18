@@ -1,21 +1,21 @@
 #include <mallok/log.h>
-#include <mallok/page.h>
-#include <mallok/page_list.h>
+#include <mallok/area.h>
+#include <mallok/area_list.h>
 
 #include <sys/mman.h>
 #include <unistd.h>
 
-void page_list_init(page_list *self) {
+void area_list_init(area_list *self) {
 	self->first = NULL;
 	self->length = 0;
 	self->free_count = 0;
 }
 
-page *page_list_insert(page_list *self, size_t page_size) {
-	// Ask for new page
-	page_list_node *node =
+area *area_list_insert(area_list *self, size_t area_size) {
+	// Ask for new area
+	area_list_node *node =
 	    mmap(NULL,                   // To address is required
-	         page_size,              // Size of the page to request
+	         area_size,              // Size of the area to request
 	         PROT_READ | PROT_WRITE, // Allow reading and writing
 	         MAP_ANONYMOUS           // Do not map of filesystem
 	             | MAP_PRIVATE,      // Do not share with other processes
@@ -23,7 +23,7 @@ page *page_list_insert(page_list *self, size_t page_size) {
 	    );
 
 	if (node == MAP_FAILED) {
-		// Could not create page
+		// Could not create area
 		log_error("map failed: %x");
 		return NULL;
 	}
@@ -35,16 +35,16 @@ page *page_list_insert(page_list *self, size_t page_size) {
 	node->next = self->first;
 	node->previous = NULL;
 	self->first = node;
-	page_init(&node->page, page_size);
+	area_init(&node->area, area_size);
 
 	log_trace("%p <- mapped address", node);
-	return &node->page;
+	return &node->area;
 }
 
-void page_list_remove(page_list *self, page *page) {
-	log_trace("self = %p, page = %p <- page_list_remove", self, page);
+void area_list_remove(area_list *self, area *area) {
+	log_trace("self = %p, area = %p <- area_list_remove", self, area);
 
-	page_list_node *node = page_list_node_of_page(page);
+	area_list_node *node = area_list_node_of_area(area);
 
 	if (self->first == node) {
 		self->first = node->next;
@@ -55,42 +55,42 @@ void page_list_remove(page_list *self, page *page) {
 	if (node->next)
 		node->next->previous = node->previous;
 
-	if (munmap(node, page->size)) {
+	if (munmap(node, area->size)) {
 		log_error("%e <- munmap error");
 		exit(1);
 	}
 }
 
-page_list_node *page_list_node_of_page(page *p) {
-	return (page_list_node *)((uintptr_t)p - offsetof(page_list_node, page));
+area_list_node *area_list_node_of_area(area *a) {
+	return (area_list_node *)((uintptr_t)a - offsetof(area_list_node, area));
 }
 
-void page_list_show(page_list *self) {
-	log_trace("self = %p <- page_list_show", self);
+void area_list_show(area_list *self) {
+	log_trace("self = %p <- area_list_show", self);
 	// The first node is not a real node
-	page_list_node *cursor = self->first;
+	area_list_node *cursor = self->first;
 
 	log_trace("\t first = %p", self->first);
 
 	for (; cursor; cursor = cursor->next) {
-		page_show_chunks(&cursor->page);
+		area_show_chunks(&cursor->area);
 	}
 }
 
-chunk *page_list_available_chunk(page_list *self, size_t size,
-                                 page **page_of_chunk) {
-	log_trace("self = %p, size = %z <- page_list_available_chunk", self, size);
-	page_list_node *cursor = self->first;
+chunk *area_list_available_chunk(area_list *self, size_t size,
+                                 area **area_of_chunk) {
+	log_trace("self = %p, size = %z <- area_list_available_chunk", self, size);
+	area_list_node *cursor = self->first;
 	chunk *result = NULL;
-	*page_of_chunk = NULL;
+	*area_of_chunk = NULL;
 
 	for (; cursor; cursor = cursor->next) {
-		if ((result = page_find_free(&cursor->page, size)))
+		if ((result = area_find_free(&cursor->area, size)))
 			break;
 	}
 
 	if (cursor)
-		*page_of_chunk = &cursor->page;
+		*area_of_chunk = &cursor->area;
 
 	return result;
 }
