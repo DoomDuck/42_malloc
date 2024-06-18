@@ -32,7 +32,7 @@ re: fclean
 
 $(NAME): $(OBJECTS)
 	$(CC) -o $@ --shared $^
-	ln -s $@ libft_malloc.so
+	ln -sf $@ libft_malloc.so
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@ mkdir -p $(@D)
