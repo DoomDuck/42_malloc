@@ -4,10 +4,16 @@
   outputs = { self, nixpkgs } : let
     system = "x86_64-linux";
     pkgs = nixpkgs.legacyPackages."${system}";
+    mesure = pkgs.writeShellApplication {
+      name = "mesure";
+      text = ''
+        ${pkgs.time}/bin/time -v "$@"
+      '';
+    };
   in {
     devShells.x86_64-linux.default = pkgs.mkShell {
       name = "malloc";
-      buildInputs = [ pkgs.gdb ];
+      buildInputs = [ pkgs.gdb mesure ];
       nativeBuildInputs = [ pkgs.fish ];
 
       shellHook = ''
