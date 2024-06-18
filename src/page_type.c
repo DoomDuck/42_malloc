@@ -1,6 +1,6 @@
-#include <utils.h>
-#include <page_type.h>
-#include <allocator.h>
+#include <mallok/utils.h>
+#include <mallok/page_type.h>
+#include <mallok/allocator.h>
 
 page_type page_type_for_allocation_size(size_t size) {
 	if (size <= PAGE_TINY_MAX_ALLOCATION_SIZE)

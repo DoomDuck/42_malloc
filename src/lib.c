@@ -1,5 +1,5 @@
-#include <log.h>
-#include <allocator.h>
+#include <mallok/log.h>
+#include <mallok/allocator.h>
 
 void show_alloc_mem(void) {
 	// TODO: use printing_instead of logging functions

@@ -1,7 +1,8 @@
 #pragma once
 
-#include <page_list.h>
-#include <page_type.h>
+#include <mallok/page_list.h>
+#include <mallok/page_type.h>
+
 #include <stddef.h>
 
 typedef struct {

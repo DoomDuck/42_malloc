@@ -1,6 +1,7 @@
 #pragma once
 
-#include <chunk.h>
+#include <mallok/chunk.h>
+
 #include <stddef.h>
 
 #define PAGE_HEADER_SIZE (offsetof(page_list_node, page.first_chunk))

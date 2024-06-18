@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stdbool.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 /* File descriptor */
 typedef int fd;

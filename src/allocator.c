@@ -1,11 +1,11 @@
-#include <log.h>
-#include <mem.h>
-#include <page.h>
-#include <chunk.h>
-#include <utils.h>
-#include <page_list.h>
-#include <page_type.h>
-#include <allocator.h>
+#include <mallok/log.h>
+#include <mallok/mem.h>
+#include <mallok/page.h>
+#include <mallok/chunk.h>
+#include <mallok/utils.h>
+#include <mallok/page_list.h>
+#include <mallok/page_type.h>
+#include <mallok/allocator.h>
 
 #include <stdalign.h>
 #include <unistd.h>

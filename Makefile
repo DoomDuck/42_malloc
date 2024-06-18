@@ -7,7 +7,7 @@ NAME = libft_malloc_$(HOSTTYPE).so
 CC = gcc
 RM = rm -rf
 
-INC_DIR = include
+INC_DIR = inc
 SRC_DIR = src
 OBJ_DIR = .obj
 

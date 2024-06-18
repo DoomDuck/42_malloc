@@ -1,6 +1,6 @@
-#include <log.h>
-#include <page_list.h>
-#include <print.h>
+#include <mallok/log.h>
+#include <mallok/print.h>
+#include <mallok/page_list.h>
 
 #include <stdarg.h>
 #include <errno.h>

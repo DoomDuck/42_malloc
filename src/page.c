@@ -1,8 +1,7 @@
-#include <chunk.h>
-#include <log.h>
-#include <chunk.h>
-#include <page.h>
-#include <page_list.h>
+#include <mallok/log.h>
+#include <mallok/chunk.h>
+#include <mallok/page.h>
+#include <mallok/page_list.h>
 
 void page_init(page *self, size_t size) {
 	log_trace("self = %p, size = %z <- page_init", self, size);
