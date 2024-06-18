@@ -8,11 +8,16 @@
 #include <mallok/allocator.h>
 
 #include <stdalign.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 allocator global_allocator;
 
 void allocator_init(allocator *self) {
+	const char* log_env_var = getenv("MALLOK_LOG");
+	self->logging_level = log_level_off;
+	if (log_env_var)
+		self->logging_level = log_level_from_name(log_env_var);
 	self->page_size = getpagesize();
 	log_info("%z <- page size", self->page_size);
 	// TODO: initalize minimal amount of pages

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mallok/log.h>
 #include <mallok/page_list.h>
 #include <mallok/page_type.h>
 
@@ -7,6 +8,7 @@
 
 typedef struct {
 	size_t page_size;
+	log_level logging_level;
 	page_list tiny;
 	page_list small;
 	page_list large;
