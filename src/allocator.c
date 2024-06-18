@@ -15,7 +15,7 @@ allocator global_allocator;
 
 void allocator_init(allocator *self) {
 	const char *log_env_var = getenv("MALLOK_LOG");
-	self->logging_level = log_level_off;
+	self->logging_level = log_level_error;
 	if (log_env_var)
 		self->logging_level = log_level_from_name(log_env_var);
 	self->page_size = getpagesize();
@@ -83,7 +83,7 @@ void allocator_dealloc(allocator *self, void *address) {
 	page_try_fuse(p, c);
 
 	chunk *previous = chunk_previous(c);
-	if (previous)
+	if (!c->header.previous_in_use && previous)
 		page_try_fuse(p, previous);
 
 	if (page_is_empty(p))

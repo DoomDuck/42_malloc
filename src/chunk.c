@@ -7,12 +7,12 @@ void chunk_init(chunk *self, size_t previous_chunk_size, size_t size,
                 bool has_next, bool previous_in_use, chunk *previous,
                 chunk *next) {
 	self->previous_chunk_size = previous_chunk_size;
-	chunk_set_size(self, size);
 	self->header.previous_in_use = previous_in_use;
 	self->header.in_use = false;
 	self->header.has_next = has_next;
 	self->body.list.previous = previous;
 	self->body.list.next = next;
+	chunk_set_size(self, size);
 }
 
 void chunk_set_size(chunk *self, size_t size) {
@@ -21,11 +21,11 @@ void chunk_set_size(chunk *self, size_t size) {
 	assert(size % 16 == 0, "Invalid chunk size %z mod 16 == %z", size,
 	       size % 16);
 
+	self->header.size_divided_by_16 = size / 16;
+
 	chunk *next = chunk_next(self);
 	if (next)
 		next->previous_chunk_size = size;
-
-	self->header.size_divided_by_16 = size / 16;
 }
 
 // Returns the size of the chunk (header + payload)

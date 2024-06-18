@@ -10,7 +10,6 @@
 
 typedef struct {
 	size_t size_divided_by_16 : 8 * sizeof(size_t) - 3;
-	// For previous
 	bool previous_in_use : 1;
 	bool in_use : 1;
 	bool has_next : 1;

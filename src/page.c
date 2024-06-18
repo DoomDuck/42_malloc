@@ -56,9 +56,9 @@ bool page_try_split(page *self, chunk *to_split, size_t allocation_size) {
 	           to_split->header.has_next, false, to_split,
 	           to_split->body.list.next);
 
-	chunk_set_size(to_split, size);
 	to_split->header.has_next = true;
 	to_split->body.list.next = next;
+	chunk_set_size(to_split, size);
 
 	return true;
 }
@@ -74,9 +74,9 @@ bool page_try_fuse(page *self, chunk *c) {
 	/* TODO: use a better function */
 	page_mark_in_use(self, next);
 
+	c->header.has_next = next->header.has_next;
 	size_t combined_size = chunk_size(c) + chunk_size(next);
 	chunk_set_size(c, combined_size);
-	c->header.has_next = next->header.has_next;
 
 	return true;
 }
