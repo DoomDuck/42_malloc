@@ -3,6 +3,7 @@
 #include <mallok/global_state.h>
 
 void show_alloc_mem(void) {
+    pthread_mutex_lock(&state.logging_mutex);
     print_fmt(
         STDOUT_FILENO,
         "tiny:\n%A\n"
@@ -12,6 +13,7 @@ void show_alloc_mem(void) {
         &state.alloc.small,
         &state.alloc.large
     );
+    pthread_mutex_unlock(&state.logging_mutex);
 }
 
 void* malloc(size_t allocation_size) {
