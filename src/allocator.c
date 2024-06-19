@@ -22,6 +22,9 @@ void allocator_init(allocator* self) {
     self->page_size = getpagesize();
     log_info("%z <- page size", self->page_size);
 
+	// Initialize mutex
+	pthread_mutex_init(&self->mutex, NULL);
+
     // Initialize areas
     area_list_init(&self->tiny);
     area_list_init(&self->small);
@@ -30,6 +33,16 @@ void allocator_init(allocator* self) {
     // Preallocate some areas
     area_list_insert(&self->tiny, AREA_TINY_SIZE);
     area_list_insert(&self->small, AREA_SMALL_SIZE);
+}
+
+void allocator_deinit(allocator* self) {
+	// Destroy mutex
+	pthread_mutex_destroy(&self->mutex);
+
+    // Deinitialize areas
+    area_list_deinit(&self->tiny);
+    area_list_deinit(&self->small);
+    area_list_deinit(&self->large);
 }
 
 size_t allocator_area_size_for_size(allocator* self, size_t allocation_size) {
@@ -58,6 +71,10 @@ void global_allocator_init(void) {
     allocator_init(&global_allocator);
 }
 
+void global_allocator_deinit(void) {
+    allocator_deinit(&global_allocator);
+}
+
 void* allocator_alloc(allocator* self, size_t allocation_size) {
     log_trace(
         "self = %p, allocation_size = %z <- allocator_alloc",
@@ -79,8 +96,10 @@ void* allocator_alloc(allocator* self, size_t allocation_size) {
     if (!c) {
         size_t area_size = allocator_area_size_for_size(self, allocation_size);
         log_trace("No available chunk, creating one of size %z", area_size);
-        if (!(a = area_list_insert(list, area_size)))
+        if (!(a = area_list_insert(list, area_size))) {
+			pthread_mutex_unlock(&self->mutex);
             return NULL;
+		}
         c = a->free;
     }
 
@@ -131,7 +150,7 @@ void* allocator_realloc(allocator* self, void* address, size_t new_size) {
 		return &c->body.payload;
 	}
 
-	// Use a new chunk
+	// Use a new chunk 
     void* new_place = allocator_alloc(self, new_size);
 
     size_t copied_amount = previous_size;
@@ -142,4 +161,27 @@ void* allocator_realloc(allocator* self, void* address, size_t new_size) {
     allocator_dealloc(self, address);
 
     return new_place;
+}
+
+/* Multi-threaded allocation functions */
+void* allocator_alloc_mt(allocator* self, size_t allocation_size) {
+	pthread_mutex_lock(&self->mutex);
+	void* result = allocator_alloc(self, allocation_size);
+	pthread_mutex_unlock(&self->mutex);
+
+	return result;
+}
+
+void allocator_dealloc_mt(allocator* self, void* address) {
+	pthread_mutex_lock(&self->mutex);
+	allocator_dealloc(self, address);
+	pthread_mutex_unlock(&self->mutex);
+}
+
+void* allocator_realloc_mt(allocator* self, void* address, size_t new_size) {
+	pthread_mutex_lock(&self->mutex);
+	void* result = allocator_realloc(self, address, new_size);
+	pthread_mutex_unlock(&self->mutex);
+
+	return result;
 }

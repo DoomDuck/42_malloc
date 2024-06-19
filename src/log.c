@@ -97,17 +97,6 @@ void log_at_level(log_level level, const char* fmt, ...) {
     print_string(LOG_FD, "\n");
 }
 
-_Noreturn void fatal(const char* reason) {
-    print_fmt(
-        STDERR_FILENO,
-        RED
-        ">> "
-        "FATAL: %s\n" RESET,
-        reason
-    );
-    exit(1);
-}
-
 _Noreturn void assertion_fail(
     const char* assertion,
     const char* file_name,

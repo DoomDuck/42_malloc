@@ -13,8 +13,6 @@ struct s_area_list_node {
 
 typedef struct {
     area_list_node* first;
-    size_t length;
-    size_t free_count;
 } area_list;
 
 /* Lifecycle */

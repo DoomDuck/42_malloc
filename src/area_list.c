@@ -6,8 +6,12 @@
 
 void area_list_init(area_list* self) {
     self->first = NULL;
-    self->length = 0;
-    self->free_count = 0;
+}
+
+void area_list_deinit(area_list* self) {
+	while (self->first) {
+		area_list_remove(self, &self->first->area);;
+	}
 }
 
 area* area_list_insert(area_list* self, size_t area_size) {
@@ -44,6 +48,8 @@ area* area_list_insert(area_list* self, size_t area_size) {
 void area_list_remove(area_list* self, area* area) {
     log_trace("self = %p, area = %p <- area_list_remove", self, area);
 
+	area_deinit(area);
+
     area_list_node* node = area_list_node_of_area(area);
 
     if (self->first == node) {
@@ -56,7 +62,7 @@ void area_list_remove(area_list* self, area* area) {
         node->next->previous = node->previous;
 
     if (munmap(node, area->size))
-        fatal("%e <- munmap error");
+        log_error("%e <- munmap error");
 }
 
 area_list_node* area_list_node_of_area(area* a) {

@@ -3,6 +3,7 @@
 #include <mallok/area_list.h>
 #include <mallok/log.h>
 #include <stddef.h>
+#include <pthread.h>
 
 #define AREA_TINY_MAX_ALLOCATION_SIZE (128)
 #define AREA_SMALL_MAX_ALLOCATION_SIZE (1024)
@@ -15,6 +16,7 @@
 typedef struct {
     size_t page_size;
     log_level logging_level;
+	pthread_mutex_t mutex;
     area_list tiny;
     area_list small;
     area_list large;
@@ -24,10 +26,15 @@ typedef struct {
 void allocator_init(allocator* self);
 void allocator_deinit(allocator* self);
 
-/* Allocation function */
+/* Allocation functions */
 void* allocator_alloc(allocator* self, size_t allocation_size);
 void allocator_dealloc(allocator* self, void* address);
 void* allocator_realloc(allocator* self, void* address, size_t new_size);
+
+/* Multi-threaded allocation functions */
+void* allocator_alloc_mt(allocator* self, size_t allocation_size);
+void allocator_dealloc_mt(allocator* self, void* address);
+void* allocator_realloc_mt(allocator* self, void* address, size_t new_size);
 
 /* List dispatch */
 size_t allocator_area_size_for_size(allocator* self, size_t allocation_size);
@@ -39,3 +46,4 @@ extern allocator global_allocator;
 
 // TODO: set the correct prority
 void __attribute__((constructor(101))) global_allocator_init(void);
+void __attribute__((destructor(101))) global_allocator_deinit(void);

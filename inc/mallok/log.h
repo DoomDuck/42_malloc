@@ -32,8 +32,6 @@ _Noreturn void assertion_fail(
     ...
 );
 
-_Noreturn void fatal(const char* reason);
-
 /* Assert for certain properties in the program's execution */
 #define assert(condition, ...) \
     if (!(condition)) \
