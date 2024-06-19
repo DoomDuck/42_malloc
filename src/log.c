@@ -89,7 +89,7 @@ void log_at_level(log_level level, const char* fmt, ...) {
 
     va_list arg_list;
     va_start(arg_list, fmt);
-	print_vfmt(LOG_FD, fmt, arg_list);
+	print_fmtv(LOG_FD, fmt, arg_list);
     va_end(arg_list);
 
     print_string(LOG_FD, "\n");
@@ -120,7 +120,7 @@ _Noreturn void assertion_fail(
 	);
 	va_list args;
 	va_start(args, format);
-	print_vfmt(STDERR_FILENO, format, args);
+	print_fmtv(STDERR_FILENO, format, args);
 	va_end(args);
 	print_string(STDERR_FILENO, "\n\n");
 	exit(1);

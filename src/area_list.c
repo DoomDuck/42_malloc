@@ -63,18 +63,6 @@ area_list_node* area_list_node_of_area(area* a) {
     return (area_list_node*)((uintptr_t)a - offsetof(area_list_node, area));
 }
 
-void area_list_show(area_list* self, fd output) {
-    log_trace("self = %p <- area_list_show", self);
-    // The first node is not a real node
-    area_list_node* cursor = self->first;
-
-    print_fmt(output, "\t first = %p\n", self->first);
-
-    for (; cursor; cursor = cursor->next) {
-        area_show_chunks(&cursor->area, output);
-    }
-}
-
 chunk*
 area_list_available_chunk(area_list* self, size_t size, area** area_of_chunk) {
     log_trace("self = %p, size = %z <- area_list_available_chunk", self, size);

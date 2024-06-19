@@ -2,7 +2,6 @@
 #include <mallok/area_list.h>
 #include <mallok/chunk.h>
 #include <mallok/log.h>
-#include "mallok/print.h"
 
 void area_init(area* self, size_t size) {
     log_trace("self = %p, size = %z <- area_init", self, size);
@@ -96,21 +95,6 @@ bool area_try_fuse(area* self, chunk* c) {
 void* area_end(area* self) {
     area_list_node* node = area_list_node_of_area(self);
     return (void*)((uintptr_t)node + self->size);
-}
-
-void area_show_chunks(area* self, fd output) {
-    chunk* cursor = &self->first_chunk;
-
-    for (; cursor; cursor = chunk_next(cursor)) {
-        size_t alloc_size = chunk_body_size(cursor);
-        print_fmt(
-			output,
-            "\t %p - %p - : %z bytes\n",
-            &cursor->body.payload,
-            &cursor->body.payload + alloc_size,
-            alloc_size
-        );
-    }
 }
 
 chunk* area_find_free(area* self, size_t size) {

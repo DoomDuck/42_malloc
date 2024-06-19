@@ -65,14 +65,40 @@ void print_pointer(fd output, void* p) {
     print_string(output, cursor);
 }
 
+void print_area(fd output, area* a) {
+    chunk* cursor = &a->first_chunk;
+
+    for (; cursor; cursor = chunk_next(cursor)) {
+        size_t alloc_size = chunk_body_size(cursor);
+        print_fmt(
+			output,
+            "\t %p - %p - : %z bytes\n",
+            &cursor->body.payload,
+            &cursor->body.payload + alloc_size,
+            alloc_size
+        );
+    }
+}
+
+void print_area_list(fd output, area_list* list) {
+    // The first node is not a real node
+    area_list_node* cursor = list->first;
+
+    print_fmt(output, "\t first = %p\n", list->first);
+
+    for (; cursor; cursor = cursor->next) {
+		print_area(output, &cursor->area);
+    }
+}
+
 void print_fmt(fd output, const char* fmt, ...) {
     va_list arg_list;
     va_start(arg_list, fmt);
-	print_vfmt(output, fmt, arg_list);
+	print_fmtv(output, fmt, arg_list);
     va_end(arg_list);
 }
 
-void print_vfmt(fd output, const char* fmt, va_list arg_list) {
+void print_fmtv(fd output, const char* fmt, va_list arg_list) {
     size_t i = 0;
     size_t written_up_to = 0;
     bool in_format = false;
@@ -87,7 +113,7 @@ void print_vfmt(fd output, const char* fmt, va_list arg_list) {
             } else if (c == 'z') {
                 print_size_t(output, va_arg(arg_list, size_t));
             } else if (c == 'P') {
-                area_list_show(va_arg(arg_list, area_list*), output);
+                print_area_list(output, va_arg(arg_list, area_list*));
             } else if (c == 'e') {
                 print_string(output, strerror(errno));
             } else {
