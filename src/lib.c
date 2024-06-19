@@ -1,7 +1,7 @@
 #include <mallok/allocator.h>
 #include <mallok/log.h>
-#include "mallok/print.h"
-#include "unistd.h"
+#include <mallok/print.h>
+#include <unistd.h>
 
 void show_alloc_mem(void) {
     // TODO: use printing_instead of logging functions

@@ -1,8 +1,5 @@
 #pragma once
 
-/* Required for the assert macro */
-#include <stdlib.h>
-
 #define LOG_FD 2
 
 typedef enum e_log_level {
@@ -26,12 +23,19 @@ void log_at_level(log_level level, const char* fmt, ...);
 #define log_warn(...) (log_at_level(log_level_warn, __VA_ARGS__))
 #define log_error(...) (log_at_level(log_level_error, __VA_ARGS__))
 
-#define assert(condition, ...) \
-    if (!(condition)) { \
-        log_error(__VA_ARGS__); \
-        exit(1); \
-    }
+_Noreturn void assertion_fail(
+	const char *assertion,
+	const char *file_name,
+	unsigned line,
+	const char *function_name,
+	const char* format,
+	...
+);
 
-/* This has to be declared in the end to break circular dependency */
-#include <mallok/allocator.h>
-#define LOG_LEVEL (global_allocator.logging_level)
+_Noreturn void fatal(const char* reason);
+
+/* Assert for certain properties in the program's execution */
+#define assert(condition, ...) \
+  if (!(condition)) \
+    assertion_fail(#condition, __FILE__, __LINE__, __func__, __VA_ARGS__);
+
