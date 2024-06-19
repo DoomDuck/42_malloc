@@ -115,9 +115,23 @@ void* allocator_realloc(allocator* self, void* address, size_t new_size) {
         return allocator_alloc(self, new_size);
 
     chunk* c = chunk_of_payload(address);
+	area* a = area_of_chunk(c);
 
-    size_t previous_size = chunk_size(c);
+    size_t previous_size = chunk_body_size(c);
 
+	// Split current chunk
+	if (new_size <= previous_size) {
+		area_try_split(a, c, new_size);
+		return &c->body.payload;
+	}
+
+	// Try to expand to next chunk
+	if (area_try_fuse(a, c) && chunk_body_size(c) >= new_size) {
+		area_try_split(a, c, new_size);
+		return &c->body.payload;
+	}
+
+	// Use a new chunk
     void* new_place = allocator_alloc(self, new_size);
 
     size_t copied_amount = previous_size;

@@ -48,6 +48,5 @@ bool chunk_is_first(chunk* self);
 void chunk_set_size(chunk* self, size_t size);
 size_t chunk_body_size(chunk* self);
 chunk* chunk_next(chunk* self);
-void chunk_try_fuse(chunk* self);
 chunk* chunk_extract_from_list(chunk* ref);
 chunk* chunk_previous(chunk* self);
