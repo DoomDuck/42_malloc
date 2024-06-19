@@ -9,18 +9,21 @@ RM = rm -rf
 
 INC_DIR = inc
 SRC_DIR = src
-OBJ_DIR = .obj
+BUILD_DIR = .build
+OBJS_DIR = $(BUILD_DIR)/objs
+DEPS_DIR = $(BUILD_DIR)/deps
 
 CFLAGS = -I $(INC_DIR) -Wall -Wextra -pedantic -fPIC -ggdb
 SOURCES = $(shell find src/ -type f -name '*.c')
-OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJS_DIR)/%.o)
+DEPS = $(SOURCES:$(SRC_DIR)/%.c=$(DEPS_DIR)/%.d)
 
 .PHONY: all
 all: $(NAME)
 
 .PHONY: clean
 clean: 
-	$(RM) $(OBJ_DIR)
+	$(RM) $(BUILD_DIR)
 
 .PHONY: fclean
 fclean: clean
@@ -34,6 +37,12 @@ $(NAME): $(OBJECTS)
 	$(CC) -o $@ --shared $^
 	ln -sf $@ libft_malloc.so
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+$(OBJS_DIR)/%.o: $(SRC_DIR)/%.c
 	@ mkdir -p $(@D)
-	$(CC) -o $@ $(CFLAGS) -c $^
+	$(CC) -o $@ $(CFLAGS) -c $<
+
+$(DEPS_DIR)/%.d: $(SRC_DIR)/%.c
+	@ mkdir -p $(@D)
+	$(CC) -o $@ $< $(CFLAGS) -MM -MG -MT $(patsubst $(DEPS_DIR)/%.d, $(OBJS_DIR)/%.o, $@)
+
+-include $(DEPS)
