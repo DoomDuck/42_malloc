@@ -75,6 +75,12 @@ void global_allocator_deinit(void) {
     allocator_deinit(&global_allocator);
 }
 
+static inline void round_to_valid_allocation_size(size_t* size) {
+    if (*size < CHUNK_MIN_BODY_SIZE)
+        *size = CHUNK_MIN_BODY_SIZE;
+    *size = round_up_to_multiple(*size, alignof(chunk));
+}
+
 void* allocator_alloc(allocator* self, size_t allocation_size) {
     log_trace(
         "self = %p, allocation_size = %z <- allocator_alloc",
@@ -82,9 +88,10 @@ void* allocator_alloc(allocator* self, size_t allocation_size) {
         allocation_size
     );
 
-    // TODO: check that it is the correct minimum size
-    if (allocation_size < sizeof(chunk))
-        allocation_size = sizeof(chunk);
+    round_to_valid_allocation_size(&allocation_size);
+
+    if (allocation_size < CHUNK_MIN_BODY_SIZE)
+        allocation_size = CHUNK_MIN_BODY_SIZE;
     allocation_size = round_up_to_multiple(allocation_size, alignof(chunk));
 
     area_list* list = allocator_area_list_for_size(self, allocation_size);
@@ -98,7 +105,6 @@ void* allocator_alloc(allocator* self, size_t allocation_size) {
         size_t area_size = allocator_area_size_for_size(self, allocation_size);
         log_trace("No available chunk, creating one of size %z", area_size);
         if (!(a = area_list_insert(list, area_size))) {
-            pthread_mutex_unlock(&self->mutex);
             return NULL;
         }
         c = a->free;
@@ -136,8 +142,9 @@ void* allocator_realloc(allocator* self, void* address, size_t new_size) {
 
     chunk* c = chunk_of_payload(address);
     area* a = area_of_chunk(c);
-
     size_t previous_size = chunk_body_size(c);
+
+    round_to_valid_allocation_size(&new_size);
 
     // Split current chunk
     if (new_size <= previous_size) {

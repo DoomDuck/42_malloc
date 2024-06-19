@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -8,8 +9,19 @@
 #define SMALL_ALLOC_MAX_SIZE 1024
 #define LARGE_ALLOC_MAX_SIZE 10240
 
+bool write_all(int output, const void* bytes, size_t count) {
+    while (count != 0) {
+        ssize_t result = write(output, bytes, count);
+        if (result < 0)
+            return false;
+        count -= result;
+        bytes = (uint8_t*)bytes + result;
+    }
+    return true;
+}
+
 void print(const char* s) {
-    write(1, s, strlen(s));
+    write_all(STDOUT_FILENO, s, strlen(s));
 }
 
 void assert(bool condition, const char* message) {

@@ -1,11 +1,10 @@
 #include <errno.h>
+#include <mallok/area_list.h>
 #include <mallok/print.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
-
-#include "mallok/area_list.h"
 
 size_t string_length(const char* s) {
     size_t length = 0;

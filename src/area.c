@@ -94,7 +94,6 @@ bool area_try_fuse(area* self, chunk* c) {
     if (!next || next->header.in_use)
         return false;
 
-    /* TODO: use a better function */
     area_mark_in_use(self, next);
 
     c->header.has_next = next->header.has_next;
