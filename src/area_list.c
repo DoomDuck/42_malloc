@@ -56,7 +56,7 @@ void area_list_remove(area_list* self, area* area) {
         node->next->previous = node->previous;
 
     if (munmap(node, area->size))
-		fatal("%e <- munmap error");
+        fatal("%e <- munmap error");
 }
 
 area_list_node* area_list_node_of_area(area* a) {

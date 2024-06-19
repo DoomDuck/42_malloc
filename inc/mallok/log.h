@@ -24,18 +24,17 @@ void log_at_level(log_level level, const char* fmt, ...);
 #define log_error(...) (log_at_level(log_level_error, __VA_ARGS__))
 
 _Noreturn void assertion_fail(
-	const char *assertion,
-	const char *file_name,
-	unsigned line,
-	const char *function_name,
-	const char* format,
-	...
+    const char* assertion,
+    const char* file_name,
+    unsigned line,
+    const char* function_name,
+    const char* format,
+    ...
 );
 
 _Noreturn void fatal(const char* reason);
 
 /* Assert for certain properties in the program's execution */
 #define assert(condition, ...) \
-  if (!(condition)) \
-    assertion_fail(#condition, __FILE__, __LINE__, __func__, __VA_ARGS__);
-
+    if (!(condition)) \
+        assertion_fail(#condition, __FILE__, __LINE__, __func__, __VA_ARGS__);

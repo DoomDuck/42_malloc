@@ -2,10 +2,9 @@
 
 #include <mallok/area.h>
 #include <mallok/area_list.h>
-
+#include <stdarg.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <stdarg.h>
 
 /* File descriptor */
 typedef int fd;

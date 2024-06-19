@@ -12,24 +12,24 @@
 allocator global_allocator;
 
 void allocator_init(allocator* self) {
-	// Initialize logging system
+    // Initialize logging system
     const char* log_env_var = getenv("MALLOK_LOG");
     self->logging_level = log_level_error;
     if (log_env_var)
         self->logging_level = log_level_from_name(log_env_var);
 
-	// Fetch page_size
+    // Fetch page_size
     self->page_size = getpagesize();
     log_info("%z <- page size", self->page_size);
 
-	// Initialize areas
+    // Initialize areas
     area_list_init(&self->tiny);
     area_list_init(&self->small);
     area_list_init(&self->large);
 
-	// Preallocate some areas
-	area_list_insert(&self->tiny, AREA_TINY_SIZE);
-	area_list_insert(&self->small, AREA_SMALL_SIZE);
+    // Preallocate some areas
+    area_list_insert(&self->tiny, AREA_TINY_SIZE);
+    area_list_insert(&self->small, AREA_SMALL_SIZE);
 }
 
 size_t allocator_area_size_for_size(allocator* self, size_t allocation_size) {

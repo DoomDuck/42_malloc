@@ -1,10 +1,10 @@
 #include <errno.h>
 #include <mallok/print.h>
-
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+
 #include "mallok/area_list.h"
 
 size_t string_length(const char* s) {
@@ -71,7 +71,7 @@ void print_area(fd output, area* a) {
     for (; cursor; cursor = chunk_next(cursor)) {
         size_t alloc_size = chunk_body_size(cursor);
         print_fmt(
-			output,
+            output,
             "\t %p - %p - : %z bytes\n",
             &cursor->body.payload,
             &cursor->body.payload + alloc_size,
@@ -87,14 +87,14 @@ void print_area_list(fd output, area_list* list) {
     print_fmt(output, "\t first = %p\n", list->first);
 
     for (; cursor; cursor = cursor->next) {
-		print_area(output, &cursor->area);
+        print_area(output, &cursor->area);
     }
 }
 
 void print_fmt(fd output, const char* fmt, ...) {
     va_list arg_list;
     va_start(arg_list, fmt);
-	print_fmtv(output, fmt, arg_list);
+    print_fmtv(output, fmt, arg_list);
     va_end(arg_list);
 }
 

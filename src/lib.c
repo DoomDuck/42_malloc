@@ -5,14 +5,15 @@
 
 void show_alloc_mem(void) {
     // TODO: use printing_instead of logging functions
-    print_fmt(STDOUT_FILENO,
-		"tiny:\n%P\n"
-		"small:\n%P\n"
-		"large:\n%P\n",
-		&global_allocator.tiny,
-		&global_allocator.small,
-		&global_allocator.large
-	);
+    print_fmt(
+        STDOUT_FILENO,
+        "tiny:\n%P\n"
+        "small:\n%P\n"
+        "large:\n%P\n",
+        &global_allocator.tiny,
+        &global_allocator.small,
+        &global_allocator.large
+    );
 }
 
 void* malloc(size_t allocation_size) {
@@ -27,7 +28,8 @@ void free(void* ptr) {
     log_trace("%p <- free", ptr);
 
     // Noop on null pointer
-    if (!ptr) return;
+    if (!ptr)
+        return;
 
     allocator_dealloc(&global_allocator, ptr);
 }
