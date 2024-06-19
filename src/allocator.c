@@ -22,8 +22,14 @@ void allocator_init(allocator* self) {
     area_list_init(&self->large);
 
     // Preallocate some areas
-    area_list_insert(&self->tiny, AREA_TINY_SIZE);
-    area_list_insert(&self->small, AREA_SMALL_SIZE);
+    area_list_insert(
+        &self->tiny,
+        round_up_to_multiple(AREA_TINY_SIZE, self->page_size)
+    );
+    area_list_insert(
+        &self->small,
+        round_up_to_multiple(AREA_SMALL_SIZE, self->page_size)
+    );
 }
 
 void allocator_deinit(allocator* self) {

@@ -25,17 +25,10 @@ typedef struct {
 void allocator_init(allocator* self);
 void allocator_deinit(allocator* self);
 
-/* Initialize allocator if not allready */
-void allocator_assert_init(allocator* self);
-
 /* Allocation functions */
 void* allocator_alloc(allocator* self, size_t allocation_size);
 void allocator_dealloc(allocator* self, void* address);
 void* allocator_realloc(allocator* self, void* address, size_t new_size);
-
-/* Allocator locking functions */
-void* allocator_maybe_lock(allocator* self);
-void* allocator_maybe_unlock(allocator* self);
 
 /* Multi-threaded allocation functions */
 void* allocator_alloc_mt(allocator* self, size_t allocation_size);
