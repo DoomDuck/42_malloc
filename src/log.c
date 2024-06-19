@@ -1,3 +1,4 @@
+#include <mallok/global_state.h>
 #include <mallok/allocator.h>
 #include <mallok/area_list.h>
 #include <mallok/log.h>
@@ -5,8 +6,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-#include "unistd.h"
 
 #ifndef NO_STYLING
     #define RED "\033[38;5;1m"
@@ -79,7 +80,7 @@ log_level log_level_from_name(const char* name) {
 }
 
 void log_at_level(log_level level, const char* fmt, ...) {
-    if (level < global_allocator.logging_level)
+    if (level < state.logging_level)
         return;
 
     print_fmt(

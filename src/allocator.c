@@ -5,19 +5,10 @@
 #include <mallok/log.h>
 #include <mallok/mem.h>
 #include <mallok/utils.h>
-#include <stdalign.h>
-#include <stdlib.h>
 #include <unistd.h>
-
-allocator global_allocator;
+#include <stdalign.h>
 
 void allocator_init(allocator* self) {
-    // Initialize logging system
-    const char* log_env_var = getenv("MALLOK_LOG");
-    self->logging_level = log_level_error;
-    if (log_env_var)
-        self->logging_level = log_level_from_name(log_env_var);
-
     // Fetch page_size
     self->page_size = getpagesize();
     log_info("%z <- page size", self->page_size);
@@ -65,14 +56,6 @@ allocator_area_list_for_size(allocator* self, size_t allocation_size) {
         return &self->small;
     else
         return &self->large;
-}
-
-void global_allocator_init(void) {
-    allocator_init(&global_allocator);
-}
-
-void global_allocator_deinit(void) {
-    allocator_deinit(&global_allocator);
 }
 
 static inline void round_to_valid_allocation_size(size_t* size) {
