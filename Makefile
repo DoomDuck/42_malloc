@@ -35,6 +35,7 @@ re: fclean
 
 $(NAME): $(OBJECTS)
 	$(CC) -o $@ --shared $^
+	strip $@ -K malloc -K realloc -K free -K show_alloc_mem
 	ln -sf $@ libft_malloc.so
 
 $(OBJS_DIR)/%.o: $(SRC_DIR)/%.c
