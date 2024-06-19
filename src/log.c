@@ -83,6 +83,7 @@ void log_at_level(log_level level, const char* fmt, ...) {
     if (level < state.logging_level)
         return;
 
+    pthread_mutex_lock(&state.logging_mutex);
     print_fmt(
         LOG_FD,
         "[%s%s" RESET "] : ",
@@ -96,6 +97,7 @@ void log_at_level(log_level level, const char* fmt, ...) {
     va_end(arg_list);
 
     print_string(LOG_FD, "\n");
+    pthread_mutex_unlock(&state.logging_mutex);
 }
 
 _Noreturn void assertion_fail(
@@ -106,6 +108,8 @@ _Noreturn void assertion_fail(
     const char* format,
     ...
 ) {
+    pthread_mutex_lock(&state.logging_mutex);
+
     print_fmt(
         STDERR_FILENO,
         "\n" RED BOLD ">> Failed assertion" RESET RED
@@ -121,5 +125,7 @@ _Noreturn void assertion_fail(
     print_fmtv(STDERR_FILENO, format, args);
     va_end(args);
     print_string(STDERR_FILENO, "\n\n");
+    
+    pthread_mutex_unlock(&state.logging_mutex);
     exit(1);
 }

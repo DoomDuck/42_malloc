@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "mallok/allocator.h"
+#include "pthread.h"
 
 global_state state = {
     .initialized = false,
@@ -17,6 +18,8 @@ void global_state_assert_init(void) {
     if (state.initialized) return;
 
     // Initialize logging system
+    pthread_mutex_init(&state.logging_mutex, NULL);
+
     const char* log_env_var = getenv("MALLOK_LOG");
     state.logging_level = log_level_error;
     if (log_env_var)
@@ -33,4 +36,7 @@ void global_state_assert_deinit(void) {
 
     // Free remaning mapped regions and display warning
     allocator_deinit(&state.alloc);
+
+    pthread_mutex_destroy(&state.logging_mutex);
+    state.logging_level = log_level_off;
 }

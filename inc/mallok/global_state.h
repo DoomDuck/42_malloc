@@ -6,9 +6,13 @@
 
 typedef struct {
     bool initialized;
-    size_t page_size;
-    log_level logging_level;
+
+    /* Global allocator */
     allocator alloc;
+
+    /* Logging */
+    log_level logging_level;
+    pthread_mutex_t logging_mutex;
 } global_state;
 
 extern global_state state;
