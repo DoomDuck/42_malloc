@@ -22,8 +22,8 @@ void allocator_init(allocator* self) {
     self->page_size = getpagesize();
     log_info("%z <- page size", self->page_size);
 
-	// Initialize mutex
-	pthread_mutex_init(&self->mutex, NULL);
+    // Initialize mutex
+    pthread_mutex_init(&self->mutex, NULL);
 
     // Initialize areas
     area_list_init(&self->tiny);
@@ -36,8 +36,8 @@ void allocator_init(allocator* self) {
 }
 
 void allocator_deinit(allocator* self) {
-	// Destroy mutex
-	pthread_mutex_destroy(&self->mutex);
+    // Destroy mutex
+    pthread_mutex_destroy(&self->mutex);
 
     // Deinitialize areas
     area_list_deinit(&self->tiny);
@@ -82,6 +82,7 @@ void* allocator_alloc(allocator* self, size_t allocation_size) {
         allocation_size
     );
 
+    // TODO: check that it is the correct minimum size
     if (allocation_size < sizeof(chunk))
         allocation_size = sizeof(chunk);
     allocation_size = round_up_to_multiple(allocation_size, alignof(chunk));
@@ -97,9 +98,9 @@ void* allocator_alloc(allocator* self, size_t allocation_size) {
         size_t area_size = allocator_area_size_for_size(self, allocation_size);
         log_trace("No available chunk, creating one of size %z", area_size);
         if (!(a = area_list_insert(list, area_size))) {
-			pthread_mutex_unlock(&self->mutex);
+            pthread_mutex_unlock(&self->mutex);
             return NULL;
-		}
+        }
         c = a->free;
     }
 
@@ -134,23 +135,23 @@ void* allocator_realloc(allocator* self, void* address, size_t new_size) {
         return allocator_alloc(self, new_size);
 
     chunk* c = chunk_of_payload(address);
-	area* a = area_of_chunk(c);
+    area* a = area_of_chunk(c);
 
     size_t previous_size = chunk_body_size(c);
 
-	// Split current chunk
-	if (new_size <= previous_size) {
-		area_try_split(a, c, new_size);
-		return &c->body.payload;
-	}
+    // Split current chunk
+    if (new_size <= previous_size) {
+        area_try_split(a, c, new_size);
+        return &c->body.payload;
+    }
 
-	// Try to expand to next chunk
-	if (area_try_fuse(a, c) && chunk_body_size(c) >= new_size) {
-		area_try_split(a, c, new_size);
-		return &c->body.payload;
-	}
+    // Try to expand to next chunk
+    if (area_try_fuse(a, c) && chunk_body_size(c) >= new_size) {
+        area_try_split(a, c, new_size);
+        return &c->body.payload;
+    }
 
-	// Use a new chunk 
+    // Use a new chunk
     void* new_place = allocator_alloc(self, new_size);
 
     size_t copied_amount = previous_size;
@@ -165,23 +166,23 @@ void* allocator_realloc(allocator* self, void* address, size_t new_size) {
 
 /* Multi-threaded allocation functions */
 void* allocator_alloc_mt(allocator* self, size_t allocation_size) {
-	pthread_mutex_lock(&self->mutex);
-	void* result = allocator_alloc(self, allocation_size);
-	pthread_mutex_unlock(&self->mutex);
+    pthread_mutex_lock(&self->mutex);
+    void* result = allocator_alloc(self, allocation_size);
+    pthread_mutex_unlock(&self->mutex);
 
-	return result;
+    return result;
 }
 
 void allocator_dealloc_mt(allocator* self, void* address) {
-	pthread_mutex_lock(&self->mutex);
-	allocator_dealloc(self, address);
-	pthread_mutex_unlock(&self->mutex);
+    pthread_mutex_lock(&self->mutex);
+    allocator_dealloc(self, address);
+    pthread_mutex_unlock(&self->mutex);
 }
 
 void* allocator_realloc_mt(allocator* self, void* address, size_t new_size) {
-	pthread_mutex_lock(&self->mutex);
-	void* result = allocator_realloc(self, address, new_size);
-	pthread_mutex_unlock(&self->mutex);
+    pthread_mutex_lock(&self->mutex);
+    void* result = allocator_realloc(self, address, new_size);
+    pthread_mutex_unlock(&self->mutex);
 
-	return result;
+    return result;
 }

@@ -6,9 +6,9 @@
 void show_alloc_mem(void) {
     print_fmt(
         STDOUT_FILENO,
-        "tiny:\n%P\n"
-        "small:\n%P\n"
-        "large:\n%P\n",
+        "tiny:\n%A\n"
+        "small:\n%A\n"
+        "large:\n%A\n",
         &global_allocator.tiny,
         &global_allocator.small,
         &global_allocator.large
@@ -18,9 +18,7 @@ void show_alloc_mem(void) {
 void* malloc(size_t allocation_size) {
     log_trace("%z <- malloc", allocation_size);
 
-    void* result = allocator_alloc_mt(&global_allocator, allocation_size);
-
-    return result;
+    return allocator_alloc_mt(&global_allocator, allocation_size);
 }
 
 void free(void* ptr) {

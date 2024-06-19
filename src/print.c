@@ -112,7 +112,9 @@ void print_fmtv(fd output, const char* fmt, va_list arg_list) {
                 print_string(output, va_arg(arg_list, char*));
             } else if (c == 'z') {
                 print_size_t(output, va_arg(arg_list, size_t));
-            } else if (c == 'P') {
+            } else if (c == 'a') {
+                print_area(output, va_arg(arg_list, area*));
+            } else if (c == 'A') {
                 print_area_list(output, va_arg(arg_list, area_list*));
             } else if (c == 'e') {
                 print_string(output, strerror(errno));

@@ -2,8 +2,8 @@
 
 #include <mallok/area_list.h>
 #include <mallok/log.h>
-#include <stddef.h>
 #include <pthread.h>
+#include <stddef.h>
 
 #define AREA_TINY_MAX_ALLOCATION_SIZE (128)
 #define AREA_SMALL_MAX_ALLOCATION_SIZE (1024)
@@ -16,7 +16,7 @@
 typedef struct {
     size_t page_size;
     log_level logging_level;
-	pthread_mutex_t mutex;
+    pthread_mutex_t mutex;
     area_list tiny;
     area_list small;
     area_list large;

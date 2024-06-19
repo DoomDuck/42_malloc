@@ -1,7 +1,7 @@
-#include <mallok/log.h>
 #include <mallok/area.h>
 #include <mallok/area_list.h>
 #include <mallok/chunk.h>
+#include <mallok/log.h>
 
 void area_init(area* self, size_t size) {
     log_trace("self = %p, size = %z <- area_init", self, size);
@@ -23,14 +23,15 @@ void area_init(area* self, size_t size) {
 }
 
 void area_deinit(area* self) {
-	for (chunk* cursor = &self->first_chunk; cursor; cursor = chunk_next(cursor)) {
-		if (cursor->header.in_use)
-			log_warn(
-				"Unfreed allocation at %p of approximate size %z", 
-				&cursor->body.payload,
-				chunk_body_size(cursor)
-	  		);
-	}
+    for (chunk* cursor = &self->first_chunk; cursor;
+         cursor = chunk_next(cursor)) {
+        if (cursor->header.in_use)
+            log_warn(
+                "Unfreed allocation at %p of approximate size %z",
+                &cursor->body.payload,
+                chunk_body_size(cursor)
+            );
+    }
 }
 
 bool area_is_empty(area* self) {
