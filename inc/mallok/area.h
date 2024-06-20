@@ -7,7 +7,7 @@
 
 typedef struct {
     size_t size;
-    chunk* free;
+    chunk* first_free_chunk;
     chunk first_chunk;
 } area;
 

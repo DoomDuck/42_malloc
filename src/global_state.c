@@ -37,6 +37,7 @@ void global_state_assert_deinit(void) {
     // Free remaning mapped regions and display warning
     allocator_deinit(&state.alloc);
 
-    pthread_mutex_destroy(&state.logging_mutex);
+    // Stop logging
     state.logging_level = log_level_off;
+    pthread_mutex_destroy(&state.logging_mutex);
 }

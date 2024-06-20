@@ -13,7 +13,7 @@ BUILD_DIR = .build
 OBJS_DIR = $(BUILD_DIR)/objs
 DEPS_DIR = $(BUILD_DIR)/deps
 
-CFLAGS = -I $(INC_DIR) -Wall -Wextra -pedantic -fPIC -ggdb
+CFLAGS = -I $(INC_DIR) -Wall -Wextra -pedantic -fPIC -ggdb -O0
 SOURCES = $(shell find src/ -type f -name '*.c')
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJS_DIR)/%.o)
 DEPS = $(SOURCES:$(SRC_DIR)/%.c=$(DEPS_DIR)/%.d)
@@ -35,7 +35,7 @@ re: fclean
 
 $(NAME): $(OBJECTS)
 	$(CC) -o $@ --shared $^
-	strip $@ -K malloc -K realloc -K free -K show_alloc_mem
+	# strip $@ -K malloc -K realloc -K free -K show_alloc_mem
 	ln -sf $@ libft_malloc.so
 
 $(OBJS_DIR)/%.o: $(SRC_DIR)/%.c

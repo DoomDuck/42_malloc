@@ -46,6 +46,10 @@ size_t chunk_size(chunk* self) {
     return self->header.size_divided_by_16 * 16;
 }
 
+size_t chunk_body_size(chunk* self) {
+    return (chunk_size(self) - CHUNK_HEADER_SIZE);
+}
+
 chunk* chunk_of_payload(void* payload) {
     log_trace("chunk_of_payload");
     chunk* result =
@@ -68,8 +72,4 @@ chunk* chunk_previous(chunk* self) {
     if (chunk_is_first(self))
         return NULL;
     return (chunk*)((uintptr_t)self - self->previous_chunk_size);
-}
-
-size_t chunk_body_size(chunk* self) {
-    return (chunk_size(self) - CHUNK_HEADER_SIZE);
 }

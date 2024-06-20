@@ -8,7 +8,7 @@ void area_init(area* self, size_t size) {
 
     // Initialize struct
     self->size = size;
-    self->free = &self->first_chunk;
+    self->first_free_chunk = &self->first_chunk;
 
     // Make first chunk fill all the available space
     chunk_init(
@@ -52,14 +52,72 @@ area* area_of_chunk(chunk* cursor) {
     return (area_of_first_chunk(cursor));
 }
 
+void* area_end(area* self) {
+    area_list_node* node = area_list_node_of_area(self);
+    return (void*)((uintptr_t)node + self->size);
+}
+
+chunk* area_find_free(area* self, size_t size) {
+    log_trace("self = %p, size = %z <- area_find_free", self, size);
+    chunk* previous_chunk = NULL;
+    chunk* cursor = self->first_free_chunk;
+    while (cursor && chunk_body_size(cursor) < size) {
+        assert(cursor->body.list.previous == previous_chunk, "Incoherent chunk list");
+        assert(cursor->header.in_use == false, "Unfree chunk in free list");
+        previous_chunk = cursor;
+        cursor = cursor->body.list.next;
+    }
+    return cursor;
+}
+
+void area_remove_from_free_list(area* self, chunk* c) {
+    assert(!c->header.in_use, "Trying to remove a chunk that is in use");
+
+    chunk* next_free = c->body.list.next;
+    if (next_free)
+        next_free->body.list.previous = c->body.list.previous;
+
+    chunk* previous_free = c->body.list.previous;
+    if (previous_free)
+        previous_free->body.list.next = next_free;
+    else
+        self->first_free_chunk = next_free;
+}
+
+void area_mark_in_use(area* self, chunk* c) {
+    assert(!c->header.in_use, "Trying to use a busy chunk");
+
+    area_remove_from_free_list(self, c);
+
+    c->header.in_use = true;
+    chunk* next = chunk_next(c);
+    if (next)
+        next->header.previous_in_use = true;
+}
+
+void area_mark_free(area* self, chunk* c) {
+    assert(c->header.in_use, "Trying to free a chunk that is already free");
+
+    /* Insert in free list */
+    if (self->first_free_chunk)
+        self->first_free_chunk->body.list.previous = c;
+    c->body.list.next = self->first_free_chunk;
+    c->body.list.previous = NULL;
+    self->first_free_chunk = c;
+
+    /* Mark chunk free */
+    c->header.in_use = false;
+    chunk* next = chunk_next(c);
+    if (next)
+        next->header.previous_in_use = false;
+}
+
 bool area_try_split(area* self, chunk* to_split, size_t allocation_size) {
     log_trace(
         "self = %p, allocation_size = %z <- area_try_split_chunk",
         self,
         allocation_size
     );
-
-    assert(!to_split->header.in_use, "Trying to split a chunk in use");
 
     size_t body_size = chunk_body_size(to_split);
 
@@ -87,68 +145,16 @@ bool area_try_split(area* self, chunk* to_split, size_t allocation_size) {
 }
 
 bool area_try_fuse(area* self, chunk* c) {
-    assert(!c->header.in_use, "Trying to fuse a chunk in use");
-
     chunk* next = chunk_next(c);
 
-    if (!next || next->header.in_use)
+    if (!(next && !next->header.in_use))
         return false;
 
-    area_mark_in_use(self, next);
+    area_remove_from_free_list(self, next);
 
     c->header.has_next = next->header.has_next;
     size_t combined_size = chunk_size(c) + chunk_size(next);
     chunk_set_size(c, combined_size);
 
     return true;
-}
-
-void* area_end(area* self) {
-    area_list_node* node = area_list_node_of_area(self);
-    return (void*)((uintptr_t)node + self->size);
-}
-
-chunk* area_find_free(area* self, size_t size) {
-    log_trace("self = %p, size = %z <- area_find_free", self, size);
-    chunk* cursor = self->free;
-    while (cursor && chunk_body_size(cursor) < size) {
-        cursor = cursor->body.list.next;
-    }
-    return cursor;
-}
-
-void area_mark_in_use(area* self, chunk* c) {
-    assert(!c->header.in_use, "Trying to use a busy chunk");
-    c->header.in_use = true;
-
-    chunk* next = chunk_next(c);
-    if (next)
-        next->header.previous_in_use = true;
-
-    /* Remove from free list */
-    chunk* next_free = c->body.list.next;
-    if (next_free)
-        next_free->body.list.previous = c->body.list.previous;
-
-    chunk* previous_free = c->body.list.previous;
-    if (previous_free)
-        previous_free->body.list.next = next_free;
-    else
-        self->free = next_free;
-}
-
-void area_mark_free(area* self, chunk* c) {
-    assert(c->header.in_use, "Trying to free a chunk that is already free");
-    c->header.in_use = false;
-
-    chunk* next = chunk_next(c);
-    if (next)
-        next->header.previous_in_use = false;
-
-    /* Insert in free list */
-    if (self->free)
-        self->free->body.list.previous = c;
-    c->body.list.next = self->free;
-    c->body.list.previous = NULL;
-    self->free = c;
 }

@@ -49,8 +49,9 @@ size_t allocator_area_size_for_size(allocator* self, size_t allocation_size) {
     } else if (allocation_size <= AREA_SMALL_MAX_ALLOCATION_SIZE) {
         result = AREA_SMALL_SIZE;
     } else {
-        result = allocation_size + AREA_HEADER_SIZE + CHUNK_HEADER_SIZE;
+        result = allocation_size;
     }
+    result += AREA_HEADER_SIZE + CHUNK_HEADER_SIZE;
     return round_up_to_multiple(result, self->page_size);
 }
 
@@ -79,10 +80,6 @@ void* allocator_alloc(allocator* self, size_t allocation_size) {
 
     round_to_valid_allocation_size(&allocation_size);
 
-    if (allocation_size < CHUNK_MIN_BODY_SIZE)
-        allocation_size = CHUNK_MIN_BODY_SIZE;
-    allocation_size = round_up_to_multiple(allocation_size, alignof(chunk));
-
     area_list* list = allocator_area_list_for_size(self, allocation_size);
     area* a = NULL;
     chunk* c = NULL;
@@ -96,7 +93,7 @@ void* allocator_alloc(allocator* self, size_t allocation_size) {
         if (!(a = area_list_insert(list, area_size))) {
             return NULL;
         }
-        c = a->free;
+        c = a->first_free_chunk;
     }
 
     area_try_split(a, c, allocation_size);
@@ -110,6 +107,7 @@ void allocator_dealloc(allocator* self, void* address) {
     chunk* c = chunk_of_payload(address);
     area* a = area_of_chunk(c);
 
+    // TODO: use area size instead
     area_list* list = allocator_area_list_for_size(self, chunk_body_size(c));
 
     area_mark_free(a, c);
@@ -124,38 +122,52 @@ void allocator_dealloc(allocator* self, void* address) {
         area_list_remove(list, a);
 }
 
-void* allocator_realloc(allocator* self, void* address, size_t new_size) {
+void* allocator_realloc(allocator* self, void* old_place, size_t new_size) {
     // On null pointer realloc is equivalent to malloc
-    if (!address)
+    if (!old_place)
         return allocator_alloc(self, new_size);
 
-    chunk* c = chunk_of_payload(address);
-    area* a = area_of_chunk(c);
-    size_t previous_size = chunk_body_size(c);
-
-    round_to_valid_allocation_size(&new_size);
-
-    // Split current chunk
-    if (new_size <= previous_size) {
-        area_try_split(a, c, new_size);
-        return &c->body.payload;
+    // On new_size == 0 realloc is equivalent to free
+    if (new_size == 0) {
+        allocator_dealloc(self, old_place);
+        return NULL;
     }
 
-    // Try to expand to next chunk
-    if (area_try_fuse(a, c) && chunk_body_size(c) >= new_size) {
-        area_try_split(a, c, new_size);
-        return &c->body.payload;
-    }
+    chunk* c = chunk_of_payload(old_place);
+    size_t current_size = chunk_body_size(c);
+    // area* a = area_of_chunk(c);
+    //
+    // round_to_valid_allocation_size(&new_size);
+    //
+    // area_list* list = allocator_area_list_for_size(self, chunk_body_size(c));
+    // area_list* new_list = allocator_area_list_for_size(self, new_size);
+    //
+    // // Try to use same chunk
+    // if (list == new_list) {
+    //     // Split current chunk
+    //     if (new_size <= previous_size) {
+    //         area_try_split(a, c, new_size);
+    //         return &c->body.payload;
+    //     }
+    //
+    //     // Try to expand to next chunk
+    //     if (area_try_fuse(a, c) && chunk_body_size(c) >= new_size) {
+    //         area_try_split(a, c, new_size);
+    //         return &c->body.payload;
+    //     }
+    // }
 
     // Use a new chunk
     void* new_place = allocator_alloc(self, new_size);
 
-    size_t copied_amount = previous_size;
-    if (previous_size > new_size)
-        copied_amount = new_size;
-    memory_copy(new_place, address, copied_amount);
+    // TODO: hande new_place == NULL
 
-    allocator_dealloc(self, address);
+    size_t copied_amount = current_size;
+    if (new_size < current_size)
+        copied_amount = new_size;
+    memory_copy(new_place, old_place, copied_amount);
+
+    allocator_dealloc(self, old_place);
 
     return new_place;
 }
