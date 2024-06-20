@@ -136,28 +136,28 @@ void* allocator_realloc(allocator* self, void* old_place, size_t new_size) {
 
     chunk* c = chunk_of_payload(old_place);
     size_t current_size = chunk_body_size(c);
-    // area* a = area_of_chunk(c);
-    //
-    // round_to_valid_allocation_size(&new_size);
-    //
-    // area_list* list = allocator_area_list_for_size(self, chunk_body_size(c));
-    // area_list* new_list = allocator_area_list_for_size(self, new_size);
-    //
-    // // Try to use same chunk
-    // if (list == new_list) {
-    //     // Split current chunk
-    //     if (new_size <= current_size) {
-    //         area_try_split(a, c, new_size);
-    //         return &c->body.payload;
-    //     }
-    //
-    //     // Try to expand to next chunk
-    //     if (area_try_fuse(a, c) && chunk_body_size(c) >= new_size) {
-    //         area_try_split(a, c, new_size);
-    //         return &c->body.payload;
-    //     }
-    // }
-    //
+    area* a = area_of_chunk(c);
+
+    round_to_valid_allocation_size(&new_size);
+
+    area_list* list = allocator_area_list_for_size(self, chunk_body_size(c));
+    area_list* new_list = allocator_area_list_for_size(self, new_size);
+
+    // Try to use same chunk
+    if (list == new_list) {
+        // Split current chunk
+        if (new_size <= current_size) {
+            area_try_split(a, c, new_size);
+            return &c->body.payload;
+        }
+
+        // Try to expand to next chunk
+        if (area_try_fuse(a, c) && chunk_body_size(c) >= new_size) {
+            area_try_split(a, c, new_size);
+            return &c->body.payload;
+        }
+    }
+
     // Use a new chunk
     void* new_place = allocator_alloc(self, new_size);
 

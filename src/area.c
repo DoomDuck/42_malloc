@@ -120,7 +120,7 @@ void area_mark_free(area* self, chunk* c) {
 }
 
 bool area_try_split(area* self, chunk* to_split, size_t allocation_size) {
-    assert(!to_split->header.in_use, "Trying to split a chunk in use");
+    // assert(!to_split->header.in_use, "Trying to split a chunk in use");
     log_trace(
         "self = %p, allocation_size = %z -> area_try_split_chunk",
         self,
@@ -135,20 +135,35 @@ bool area_try_split(area* self, chunk* to_split, size_t allocation_size) {
     size_t size = CHUNK_HEADER_SIZE + allocation_size;
 
     chunk* next = (chunk*)((uintptr_t)to_split + size);
-    chunk_init(
-        next,
-        size,
-        chunk_size(to_split) - size,
-        to_split->header.has_next,
-        false,
-        to_split,
-        to_split->body.list.next
-    );
+    if (to_split->header.in_use) {
+        chunk_init(
+            next,
+            size,
+            chunk_size(to_split) - size,
+            to_split->header.has_next,
+            to_split->header.in_use,
+            NULL,
+            self->first_free_chunk
+        );
+        if (self->first_free_chunk)
+            self->first_free_chunk->body.list.previous = next;
+        self->first_free_chunk = next;
+    } else {
+        chunk_init(
+            next,
+            size,
+            chunk_size(to_split) - size,
+            to_split->header.has_next,
+            to_split->header.in_use,
+            to_split,
+            to_split->body.list.next
+        );
+        to_split->body.list.next = next;
+    }
 
     to_split->header.has_next = true;
-    if (to_split->body.list.next)
+    if (next->body.list.next)
         next->body.list.next->body.list.previous = next;
-    to_split->body.list.next = next;
     chunk_set_size(to_split, size);
 
     return true;
