@@ -4,7 +4,7 @@
 #include <mallok/log.h>
 
 void area_init(area* self, size_t size) {
-    log_trace("self = %p, size = %z <- area_init", self, size);
+    log_trace("self = %p, size = %z -> area_init", self, size);
 
     // Initialize struct
     self->size = size;
@@ -58,16 +58,23 @@ void* area_end(area* self) {
 }
 
 chunk* area_find_free(area* self, size_t size) {
-    log_trace("self = %p, size = %z <- area_find_free", self, size);
+    log_trace("self = %p, size = %z -> area_find_free", self, size);
     chunk* previous_chunk = NULL;
     chunk* cursor = self->first_free_chunk;
-    while (cursor && chunk_body_size(cursor) < size) {
-        assert(cursor->body.list.previous == previous_chunk, "Incoherent chunk list");
-        assert(cursor->header.in_use == false, "Unfree chunk in free list");
+    while (cursor) {
+        assert(
+            cursor->body.list.previous == previous_chunk,
+            "Incoherent chunk list: %p != %p",
+            cursor->body.list.previous,
+            previous_chunk
+        );
+        assert(!cursor->header.in_use, "Unfree chunk in free list");
+        if (chunk_body_size(cursor) >= size)
+            return cursor;
         previous_chunk = cursor;
         cursor = cursor->body.list.next;
     }
-    return cursor;
+    return NULL;
 }
 
 void area_remove_from_free_list(area* self, chunk* c) {
@@ -113,8 +120,9 @@ void area_mark_free(area* self, chunk* c) {
 }
 
 bool area_try_split(area* self, chunk* to_split, size_t allocation_size) {
+    assert(!to_split->header.in_use, "Trying to split a chunk in use");
     log_trace(
-        "self = %p, allocation_size = %z <- area_try_split_chunk",
+        "self = %p, allocation_size = %z -> area_try_split_chunk",
         self,
         allocation_size
     );
@@ -138,6 +146,8 @@ bool area_try_split(area* self, chunk* to_split, size_t allocation_size) {
     );
 
     to_split->header.has_next = true;
+    if (to_split->body.list.next)
+        next->body.list.next->body.list.previous = next;
     to_split->body.list.next = next;
     chunk_set_size(to_split, size);
 
@@ -145,6 +155,7 @@ bool area_try_split(area* self, chunk* to_split, size_t allocation_size) {
 }
 
 bool area_try_fuse(area* self, chunk* c) {
+    log_trace("self = %p, c = %p -> area_try_fuse", self, c);
     chunk* next = chunk_next(c);
 
     if (!(next && !next->header.in_use))

@@ -43,6 +43,7 @@ void chunk_set_size(chunk* self, size_t size) {
 
 // Returns the size of the chunk (header + payload)
 size_t chunk_size(chunk* self) {
+    log_trace("self = %p -> chunk_size", self);
     return self->header.size_divided_by_16 * 16;
 }
 

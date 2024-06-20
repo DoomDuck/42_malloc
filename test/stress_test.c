@@ -6,12 +6,9 @@
 
 #define ALLOC_COUNT 1000
 #define REALLOC_COUNT 100
-#define TINY_ALLOC_MAX_SIZE (128 / 2)
-#define SMALL_ALLOC_MAX_SIZE (1024 / 2)
-#define LARGE_ALLOC_MAX_SIZE (10240 / 2)
-// #define TINY_ALLOC_MAX_SIZE 128
-// #define SMALL_ALLOC_MAX_SIZE 1024
-// #define LARGE_ALLOC_MAX_SIZE 10240
+#define TINY_ALLOC_MAX_SIZE 128
+#define SMALL_ALLOC_MAX_SIZE 1024
+#define LARGE_ALLOC_MAX_SIZE 10240
 
 typedef struct {
     char* data;
@@ -66,11 +63,10 @@ int main(void) {
         char* result = (char*)malloc(size);
         assert(size == 0 || result != NULL, "Memory allocation failed");
 
-        // allocations[i].seed = rand();
-        // srand(allocations[i].seed);
-        // for (size_t j = 0; j < size; ++j)
-        //     result[j] = (char)j;
-        //     // result[j] = (char)rand();
+        allocations[i].seed = rand();
+        srand(allocations[i].seed);
+        for (size_t j = 0; j < size; ++j)
+            result[j] = (char)rand();
 
         allocations[i].data = result;
     }
@@ -81,29 +77,26 @@ int main(void) {
         size_t new_size = next_alloc_size();
         allocations[i].data = realloc(allocations[i].data, new_size);
 
-        // size_t size = allocations[i].size;
-        // if (new_size < size) size = new_size;
-        // srand(allocations[i].seed);
-        // for (size_t j = 0; j < size; ++j)
-        //     // assert(allocations[i].data[j] == (char)rand(), "Corrupted\n");
-        //     assert(allocations[i].data[j] == (char)j, "Corrupted");
+        size_t size = allocations[i].size;
+        if (new_size < size) size = new_size;
+        srand(allocations[i].seed);
+        for (size_t j = 0; j < size; ++j)
+            assert(allocations[i].data[j] == (char)rand(), "Corrupted\n");
 
-        // allocations[i].size = new_size;
-        // allocations[i].seed = rand();
-        // srand(allocations[i].seed);
-        // for (size_t j = 0; j < new_size; ++j)
-        //     // allocations[i].data[j] = (char)rand();
-        //     allocations[i].data[j] = (char)j;
+        allocations[i].size = new_size;
+        allocations[i].seed = rand();
+        srand(allocations[i].seed);
+        for (size_t j = 0; j < new_size; ++j)
+            allocations[i].data[j] = (char)rand();
     }
-    //
-    // print("Checking content\n");
-    // for (size_t i = 0; i < ALLOC_COUNT; ++i) {
-    //     size_t size = allocations[i].size;
-    //     srand(allocations[i].seed);
-    //     for (size_t j = 0; j < size; ++j)
-    //         // assert(allocations[i].data[j] == (char)rand(), "Corrupted\n");
-    //         assert(allocations[i].data[j] == (char)j, "Corrupted");
-    // }
+ 
+    print("Checking content\n");
+    for (size_t i = 0; i < ALLOC_COUNT; ++i) {
+        size_t size = allocations[i].size;
+        srand(allocations[i].seed);
+        for (size_t j = 0; j < size; ++j)
+            assert(allocations[i].data[j] == (char)rand(), "Corrupted");
+    }
 
     print("Freeing in random order\n");
     for (size_t len = ALLOC_COUNT; len > 0;) {

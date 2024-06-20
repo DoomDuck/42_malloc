@@ -3,6 +3,7 @@
 #include <mallok/global_state.h>
 
 void show_alloc_mem(void) {
+    log_trace("-> show_alloc_mem");
     pthread_mutex_lock(&state.logging_mutex);
     print_fmt(
         STDOUT_FILENO,
@@ -17,13 +18,13 @@ void show_alloc_mem(void) {
 }
 
 void* malloc(size_t allocation_size) {
-    log_trace("%z <- malloc", allocation_size);
+    log_trace("%z -> malloc", allocation_size);
 
     return allocator_alloc_mt(&state.alloc, allocation_size);
 }
 
 void free(void* ptr) {
-    log_trace("%p <- free", ptr);
+    log_trace("%p -> free", ptr);
 
     // Noop on null pointer
     if (!ptr)
@@ -33,7 +34,7 @@ void free(void* ptr) {
 }
 
 void* realloc(void* ptr, size_t new_size) {
-    log_trace("ptr = %p, new_size = %z <- realloc", ptr, new_size);
+    log_trace("ptr = %p, new_size = %z -> realloc", ptr, new_size);
 
     return allocator_realloc_mt(&state.alloc, ptr, new_size);
 }

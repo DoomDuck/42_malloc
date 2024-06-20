@@ -5,13 +5,14 @@
 #include <mallok/log.h>
 #include <mallok/mem.h>
 #include <mallok/utils.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdalign.h>
 
 void allocator_init(allocator* self) {
     // Fetch page_size
     self->page_size = getpagesize();
-    log_info("%z <- page size", self->page_size);
+    log_info("%z -> page size", self->page_size);
 
     // Initialize mutex
     pthread_mutex_init(&self->mutex, NULL);
@@ -73,7 +74,7 @@ static inline void round_to_valid_allocation_size(size_t* size) {
 
 void* allocator_alloc(allocator* self, size_t allocation_size) {
     log_trace(
-        "self = %p, allocation_size = %z <- allocator_alloc",
+        "self = %p, allocation_size = %z -> allocator_alloc",
         self,
         allocation_size
     );
@@ -145,7 +146,7 @@ void* allocator_realloc(allocator* self, void* old_place, size_t new_size) {
     // // Try to use same chunk
     // if (list == new_list) {
     //     // Split current chunk
-    //     if (new_size <= previous_size) {
+    //     if (new_size <= current_size) {
     //         area_try_split(a, c, new_size);
     //         return &c->body.payload;
     //     }
@@ -156,11 +157,12 @@ void* allocator_realloc(allocator* self, void* old_place, size_t new_size) {
     //         return &c->body.payload;
     //     }
     // }
-
+    //
     // Use a new chunk
     void* new_place = allocator_alloc(self, new_size);
 
-    // TODO: hande new_place == NULL
+    if (!new_place)
+        return NULL;
 
     size_t copied_amount = current_size;
     if (new_size < current_size)

@@ -16,6 +16,7 @@ void area_list_deinit(area_list* self) {
 }
 
 area* area_list_insert(area_list* self, size_t area_size) {
+    log_trace("self = %p, area_size = %z -> area_list_insert");
     // Ask for new area
     area_list_node* node = mmap(
         NULL,  // To address is required
@@ -33,7 +34,7 @@ area* area_list_insert(area_list* self, size_t area_size) {
         return NULL;
     }
 
-    log_trace("%p <- mapped address", node);
+    log_trace("mapped address: %p", node);
 
     if (self->first)
         self->first->previous = node;
@@ -42,12 +43,11 @@ area* area_list_insert(area_list* self, size_t area_size) {
     self->first = node;
     area_init(&node->area, area_size);
 
-    log_trace("%p <- mapped address", node);
     return &node->area;
 }
 
 void area_list_remove(area_list* self, area* area) {
-    log_trace("self = %p, area = %p <- area_list_remove", self, area);
+    log_trace("self = %p, area = %p -> area_list_remove", self, area);
 
     area_deinit(area);
 
@@ -63,7 +63,7 @@ void area_list_remove(area_list* self, area* area) {
         node->next->previous = node->previous;
 
     if (munmap(node, area->size))
-        log_error("%e <- munmap error");
+        log_error("munmap error: %e");
 }
 
 area_list_node* area_list_node_of_area(area* a) {
@@ -72,7 +72,7 @@ area_list_node* area_list_node_of_area(area* a) {
 
 chunk*
 area_list_available_chunk(area_list* self, size_t size, area** area_of_chunk) {
-    log_trace("self = %p, size = %z <- area_list_available_chunk", self, size);
+    log_trace("self = %p, size = %z -> area_list_available_chunk", self, size);
     area_list_node* cursor = self->first;
     chunk* result = NULL;
     *area_of_chunk = NULL;
