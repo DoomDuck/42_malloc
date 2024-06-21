@@ -41,19 +41,21 @@ void print_size_t(fd output, size_t n) {
     print_string(output, cursor);
 }
 
+static inline char hex_digit(uint8_t index) {
+    if (index < 10)
+        return '0' + index;
+    return 'a' + (index - 10);
+}
+
 void print_pointer(fd output, void* p) {
     char buffer[26];
     char* cursor = &buffer[sizeof(buffer)];
 
-    size_t n = (size_t)p;
+    uintptr_t n = (uintptr_t)p;
 
     *--cursor = '\0';
     do {
-        size_t rest = (n % 16);
-        if (rest < 10)
-            *--cursor = '0' + rest;
-        else
-            *--cursor = 'a' + (rest - 10);
+        *--cursor = hex_digit(n % 16);
         n /= 16;
     } while (n > 0);
 
@@ -64,10 +66,60 @@ void print_pointer(fd output, void* p) {
     print_string(output, cursor);
 }
 
-void print_area(fd output, area* a) {
+void print_chunk_dump(fd output, chunk* c) {
+    if (!c->header.in_use)
+        return;
+
+    uint8_t* cursor = &c->body.payload;
+    uint8_t* end = cursor + chunk_body_size(c);
+
+    char line_buffer[128];
+    char* write_head = line_buffer;
+    size_t bytes_displayed_this_line = 0;
+    while (cursor < end) {
+        // Write prefix
+        if (bytes_displayed_this_line == 0) {
+            write_head += 16;
+            char* reversed_write_head = write_head;
+            uintptr_t p = (uintptr_t)cursor;
+            for (size_t i = 0; i < sizeof(uintptr_t) * 2; ++i) {
+                *--reversed_write_head = hex_digit(p & 0xf);
+                p >>= 4;
+            }
+
+            // Write suffix
+            *write_head++ = ' ';
+            *write_head++ = '|';
+            *write_head++ = ' ';
+        }
+
+        // Add hex pair to line
+        uint8_t value = *cursor++;
+        *write_head++ = hex_digit(value >> 4);
+        *write_head++ = hex_digit(value & 0xf);
+
+        if (++bytes_displayed_this_line >= 16) {
+            // End of line
+            *write_head++ = '\n';
+            write_all(output, line_buffer, write_head - line_buffer);
+            bytes_displayed_this_line = 0;
+            write_head = line_buffer;
+        } else {
+            // New line
+            *write_head++ = ' ';
+        }
+    }
+    *write_head++ = '\n';
+    write_all(output, line_buffer, write_head - line_buffer);
+}
+
+void print_area(fd output, area* a, bool dump_hex) {
     chunk* cursor = &a->first_chunk;
 
     for (; cursor; cursor = chunk_next(cursor)) {
+        if (!cursor->header.in_use)
+            continue;
+
         size_t alloc_size = chunk_body_size(cursor);
         print_fmt(
             output,
@@ -76,17 +128,19 @@ void print_area(fd output, area* a) {
             &cursor->body.payload + alloc_size,
             alloc_size
         );
+
+        if (dump_hex)
+            print_chunk_dump(output, cursor);
     }
 }
 
-void print_area_list(fd output, area_list* list) {
-    // The first node is not a real node
+void print_area_list(fd output, area_list* list, bool dump_hex) {
     area_list_node* cursor = list->first;
 
     print_fmt(output, "\t first = %p\n", list->first);
 
     for (; cursor; cursor = cursor->next) {
-        print_area(output, &cursor->area);
+        print_area(output, &cursor->area, dump_hex);
     }
 }
 
@@ -111,10 +165,10 @@ void print_fmtv(fd output, const char* fmt, va_list arg_list) {
                 print_string(output, va_arg(arg_list, char*));
             } else if (c == 'z') {
                 print_size_t(output, va_arg(arg_list, size_t));
-            } else if (c == 'a') {
-                print_area(output, va_arg(arg_list, area*));
-            } else if (c == 'A') {
-                print_area_list(output, va_arg(arg_list, area_list*));
+            } else if (c == 'a' || c == 'A') {
+                print_area(output, va_arg(arg_list, area*), c == 'A');
+            } else if (c == 'l' || c == 'L') {
+                print_area_list(output, va_arg(arg_list, area_list*), c == 'L');
             } else if (c == 'e') {
                 print_string(output, strerror(errno));
             } else {

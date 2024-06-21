@@ -25,8 +25,8 @@ area* area_of_chunk(chunk* cursor);
 void* area_end(area* self);
 
 /* Chunk manipulation */
-chunk* area_find_free(area* self, size_t allocation_size);
-bool area_try_split(area* self, chunk* c, size_t allocation_size);
-bool area_try_fuse(area* self, chunk* c);
-void area_mark_in_use(area* self, chunk* c);
-void area_mark_free(area* self, chunk* c);
+chunk* area_find_free_chunk(area* self, size_t allocation_size);
+bool area_try_split_chunk(area* self, chunk* c, size_t allocation_size);
+bool area_try_fuse_chunk(area* self, chunk* c);
+void area_mark_chunk_in_use(area* self, chunk* c);
+void area_mark_chunk_free(area* self, chunk* c);

@@ -78,7 +78,7 @@ area_list_available_chunk(area_list* self, size_t size, area** area_of_chunk) {
     *area_of_chunk = NULL;
 
     for (; cursor; cursor = cursor->next) {
-        if ((result = area_find_free(&cursor->area, size))) {
+        if ((result = area_find_free_chunk(&cursor->area, size))) {
             *area_of_chunk = &cursor->area;
             return result;
         }

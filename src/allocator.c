@@ -5,9 +5,9 @@
 #include <mallok/log.h>
 #include <mallok/mem.h>
 #include <mallok/utils.h>
+#include <stdalign.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdalign.h>
 
 void allocator_init(allocator* self) {
     // Fetch page_size
@@ -97,9 +97,9 @@ void* allocator_alloc(allocator* self, size_t allocation_size) {
         c = a->first_free_chunk;
     }
 
-    area_try_split(a, c, allocation_size);
+    area_try_split_chunk(a, c, allocation_size);
 
-    area_mark_in_use(a, c);
+    area_mark_chunk_in_use(a, c);
 
     return &c->body.payload;
 }
@@ -111,13 +111,13 @@ void allocator_dealloc(allocator* self, void* address) {
     // TODO: use area size instead
     area_list* list = allocator_area_list_for_size(self, chunk_body_size(c));
 
-    area_mark_free(a, c);
+    area_mark_chunk_free(a, c);
 
-    area_try_fuse(a, c);
+    area_try_fuse_chunk(a, c);
 
     chunk* previous = chunk_previous(c);
     if (!c->header.previous_in_use && previous)
-        area_try_fuse(a, previous);
+        area_try_fuse_chunk(a, previous);
 
     if (area_is_empty(a))
         area_list_remove(list, a);
@@ -147,13 +147,13 @@ void* allocator_realloc(allocator* self, void* old_place, size_t new_size) {
     if (list == new_list) {
         // Split current chunk
         if (new_size <= current_size) {
-            area_try_split(a, c, new_size);
+            area_try_split_chunk(a, c, new_size);
             return &c->body.payload;
         }
 
         // Try to expand to next chunk
-        if (area_try_fuse(a, c) && chunk_body_size(c) >= new_size) {
-            area_try_split(a, c, new_size);
+        if (area_try_fuse_chunk(a, c) && chunk_body_size(c) >= new_size) {
+            area_try_split_chunk(a, c, new_size);
             return &c->body.payload;
         }
     }

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdbool.h>
-#include <mallok/log.h>
 #include <mallok/allocator.h>
+#include <mallok/log.h>
+#include <stdbool.h>
 
 typedef struct {
     bool initialized;

@@ -1,21 +1,24 @@
 #include <mallok/global_state.h>
 #include <stdlib.h>
 #include <unistd.h>
+
 #include "mallok/allocator.h"
 #include "pthread.h"
 
 global_state state = {
     .initialized = false,
     .logging_level = log_level_error,
-    .alloc = {
-        .tiny = { .first = NULL },
-        .small = { .first = NULL },
-        .large = { .first = NULL },
-    },
+    .alloc =
+        {
+            .tiny = {.first = NULL},
+            .small = {.first = NULL},
+            .large = {.first = NULL},
+        },
 };
 
 void global_state_assert_init(void) {
-    if (state.initialized) return;
+    if (state.initialized)
+        return;
 
     // Initialize logging system
     pthread_mutex_init(&state.logging_mutex, NULL);
@@ -32,7 +35,8 @@ void global_state_assert_init(void) {
 }
 
 void global_state_assert_deinit(void) {
-    if (!state.initialized) return;
+    if (!state.initialized)
+        return;
 
     // Free remaning mapped regions and display warning
     allocator_deinit(&state.alloc);

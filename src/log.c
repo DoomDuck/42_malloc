@@ -1,13 +1,12 @@
-#include <mallok/global_state.h>
 #include <mallok/allocator.h>
 #include <mallok/area_list.h>
+#include <mallok/global_state.h>
 #include <mallok/log.h>
 #include <mallok/print.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
-
 
 #ifndef NO_STYLING
     #define RED "\033[38;5;1m"
@@ -125,7 +124,7 @@ _Noreturn void assertion_fail(
     print_fmtv(STDERR_FILENO, format, args);
     va_end(args);
     print_string(STDERR_FILENO, "\n\n");
-    
+
     pthread_mutex_unlock(&state.logging_mutex);
     exit(1);
 }

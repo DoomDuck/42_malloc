@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stddef.h>
 #include <mallok/allocator.h>
+#include <stddef.h>
 
 void free(void* ptr);
 void* malloc(size_t size);

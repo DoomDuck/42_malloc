@@ -78,7 +78,8 @@ int main(void) {
         allocations[i].data = realloc(allocations[i].data, new_size);
 
         size_t size = allocations[i].size;
-        if (new_size < size) size = new_size;
+        if (new_size < size)
+            size = new_size;
         srand(allocations[i].seed);
         for (size_t j = 0; j < size; ++j)
             assert(allocations[i].data[j] == (char)rand(), "Corrupted\n");
@@ -89,7 +90,9 @@ int main(void) {
         for (size_t j = 0; j < new_size; ++j)
             allocations[i].data[j] = (char)rand();
     }
- 
+
+    unoptimized_free(NULL);
+
     print("Checking content\n");
     for (size_t i = 0; i < ALLOC_COUNT; ++i) {
         size_t size = allocations[i].size;

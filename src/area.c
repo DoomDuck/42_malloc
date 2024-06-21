@@ -57,7 +57,7 @@ void* area_end(area* self) {
     return (void*)((uintptr_t)node + self->size);
 }
 
-chunk* area_find_free(area* self, size_t size) {
+chunk* area_find_free_chunk(area* self, size_t size) {
     log_trace("self = %p, size = %z -> area_find_free", self, size);
     chunk* previous_chunk = NULL;
     chunk* cursor = self->first_free_chunk;
@@ -77,7 +77,7 @@ chunk* area_find_free(area* self, size_t size) {
     return NULL;
 }
 
-void area_remove_from_free_list(area* self, chunk* c) {
+void area_remove_chunk_from_free_list(area* self, chunk* c) {
     assert(!c->header.in_use, "Trying to remove a chunk that is in use");
 
     chunk* next_free = c->body.list.next;
@@ -91,10 +91,10 @@ void area_remove_from_free_list(area* self, chunk* c) {
         self->first_free_chunk = next_free;
 }
 
-void area_mark_in_use(area* self, chunk* c) {
+void area_mark_chunk_in_use(area* self, chunk* c) {
     assert(!c->header.in_use, "Trying to use a busy chunk");
 
-    area_remove_from_free_list(self, c);
+    area_remove_chunk_from_free_list(self, c);
 
     c->header.in_use = true;
     chunk* next = chunk_next(c);
@@ -102,7 +102,7 @@ void area_mark_in_use(area* self, chunk* c) {
         next->header.previous_in_use = true;
 }
 
-void area_mark_free(area* self, chunk* c) {
+void area_mark_chunk_free(area* self, chunk* c) {
     assert(c->header.in_use, "Trying to free a chunk that is already free");
 
     /* Insert in free list */
@@ -119,7 +119,7 @@ void area_mark_free(area* self, chunk* c) {
         next->header.previous_in_use = false;
 }
 
-bool area_try_split(area* self, chunk* to_split, size_t allocation_size) {
+bool area_try_split_chunk(area* self, chunk* to_split, size_t allocation_size) {
     log_trace(
         "self = %p, allocation_size = %z -> area_try_split_chunk",
         self,
@@ -172,14 +172,14 @@ bool area_try_split(area* self, chunk* to_split, size_t allocation_size) {
     return true;
 }
 
-bool area_try_fuse(area* self, chunk* c) {
+bool area_try_fuse_chunk(area* self, chunk* c) {
     log_trace("self = %p, c = %p -> area_try_fuse", self, c);
     chunk* next = chunk_next(c);
 
     if (!(next && !next->header.in_use))
         return false;
 
-    area_remove_from_free_list(self, next);
+    area_remove_chunk_from_free_list(self, next);
 
     c->header.has_next = next->header.has_next;
     size_t combined_size = chunk_size(c) + chunk_size(next);
