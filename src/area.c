@@ -120,7 +120,6 @@ void area_mark_free(area* self, chunk* c) {
 }
 
 bool area_try_split(area* self, chunk* to_split, size_t allocation_size) {
-    // assert(!to_split->header.in_use, "Trying to split a chunk in use");
     log_trace(
         "self = %p, allocation_size = %z -> area_try_split_chunk",
         self,
@@ -135,35 +134,39 @@ bool area_try_split(area* self, chunk* to_split, size_t allocation_size) {
     size_t size = CHUNK_HEADER_SIZE + allocation_size;
 
     chunk* next = (chunk*)((uintptr_t)to_split + size);
-    if (to_split->header.in_use) {
-        chunk_init(
-            next,
-            size,
-            chunk_size(to_split) - size,
-            to_split->header.has_next,
-            to_split->header.in_use,
-            NULL,
-            self->first_free_chunk
-        );
+
+    /* Reorganize chunk free list */
+    chunk *prev_in_list = NULL, *next_in_list = NULL;
+    if (!to_split->header.in_use) {
+        /* Find next's position in free_list */
+        prev_in_list = to_split;
+        next_in_list = to_split->body.list.next;
+        to_split->body.list.next = next;
+    } else {
+        /* Push next to front of free_list */
+        next_in_list = self->first_free_chunk;
         if (self->first_free_chunk)
             self->first_free_chunk->body.list.previous = next;
         self->first_free_chunk = next;
-    } else {
-        chunk_init(
-            next,
-            size,
-            chunk_size(to_split) - size,
-            to_split->header.has_next,
-            to_split->header.in_use,
-            to_split,
-            to_split->body.list.next
-        );
-        to_split->body.list.next = next;
     }
 
-    to_split->header.has_next = true;
+    /* Create new chunk */
+    chunk_init(
+        next,
+        size,
+        chunk_size(to_split) - size,
+        to_split->header.has_next,
+        to_split->header.in_use,
+        prev_in_list,
+        next_in_list
+    );
+
+    /* Attach next in list to it */
     if (next->body.list.next)
         next->body.list.next->body.list.previous = next;
+
+    /* Updated splited chunk's size */
+    to_split->header.has_next = true;
     chunk_set_size(to_split, size);
 
     return true;
