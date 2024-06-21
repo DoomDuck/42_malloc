@@ -13,7 +13,7 @@
   in {
     devShells.x86_64-linux.default = pkgs.mkShell {
       name = "malloc";
-      buildInputs = [ pkgs.gdb mesure ];
+      buildInputs = [ pkgs.gdb pkgs.clang-tools mesure ];
       nativeBuildInputs = [ pkgs.fish ];
 
       shellHook = ''
