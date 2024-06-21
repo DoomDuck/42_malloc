@@ -119,7 +119,7 @@ void allocator_dealloc(allocator* self, void* address) {
     if (!c->header.previous_in_use && previous)
         area_try_fuse_chunk(a, previous);
 
-    if (area_is_empty(a))
+    if (area_is_empty(a) && !area_is_last(a))
         area_list_remove(list, a);
 }
 

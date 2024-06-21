@@ -40,6 +40,11 @@ bool area_is_empty(area* self) {
     );
 }
 
+bool area_is_last(area* self) {
+    area_list_node* node = area_list_node_of_area(self);
+    return !node->previous && !node->next;
+}
+
 area* area_of_first_chunk(chunk* first) {
     log_trace("area_of_first_chunk");
     area* result = (area*)((uintptr_t)first - offsetof(area, first_chunk));
