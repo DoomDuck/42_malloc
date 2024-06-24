@@ -45,5 +45,6 @@ void* allocator_realloc_mt(allocator* self, void* address, size_t new_size);
 
 /* List dispatch */
 size_t allocator_area_size_for_size(allocator* self, size_t allocation_size);
+area_list* allocator_area_list_for_area_size(allocator* self, size_t area_size);
 area_list*
 allocator_area_list_for_size(allocator* self, size_t allocation_size);

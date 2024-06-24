@@ -65,6 +65,20 @@ allocator_area_list_for_size(allocator* self, size_t allocation_size) {
         return &self->large;
 }
 
+area_list*
+allocator_area_list_for_area_size(allocator* self, size_t area_size) {
+    const size_t AREA_TINY_SIZE =
+        round_up_to_multiple(AREA_TINY_MIN_SIZE, self->page_size);
+    const size_t AREA_SMALL_SIZE =
+        round_up_to_multiple(AREA_SMALL_MIN_SIZE, self->page_size);
+    if (area_size == AREA_TINY_SIZE)
+        return &self->tiny;
+    else if (area_size == AREA_SMALL_SIZE)
+        return &self->small;
+    else
+        return &self->large;
+}
+
 static inline void round_to_valid_allocation_size(size_t* size) {
     if (*size < CHUNK_MIN_BODY_SIZE)
         *size = CHUNK_MIN_BODY_SIZE;
@@ -107,8 +121,7 @@ void allocator_dealloc(allocator* self, void* address) {
     chunk* c = chunk_of_payload(address);
     area* a = area_of_chunk(c);
 
-    // TODO: use area size instead
-    area_list* list = allocator_area_list_for_size(self, chunk_body_size(c));
+    area_list* list = allocator_area_list_for_area_size(self, a->size);
 
     area_mark_chunk_free(a, c);
 
@@ -139,22 +152,16 @@ void* allocator_realloc(allocator* self, void* old_place, size_t new_size) {
 
     round_to_valid_allocation_size(&new_size);
 
-    area_list* list = allocator_area_list_for_size(self, chunk_body_size(c));
-    area_list* new_list = allocator_area_list_for_size(self, new_size);
+    // Split current chunk
+    if (new_size <= current_size) {
+        area_try_split_chunk(a, c, new_size);
+        return &c->body.payload;
+    }
 
-    // Try to use same chunk
-    if (list == new_list) {
-        // Split current chunk
-        if (new_size <= current_size) {
-            area_try_split_chunk(a, c, new_size);
-            return &c->body.payload;
-        }
-
-        // Try to expand to next chunk
-        if (area_try_fuse_chunk(a, c) && chunk_body_size(c) >= new_size) {
-            area_try_split_chunk(a, c, new_size);
-            return &c->body.payload;
-        }
+    // Try to expand to next chunk
+    if (area_try_fuse_chunk(a, c) && chunk_body_size(c) >= new_size) {
+        area_try_split_chunk(a, c, new_size);
+        return &c->body.payload;
     }
 
     // Use a new chunk

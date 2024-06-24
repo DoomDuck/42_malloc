@@ -1,7 +1,7 @@
-#include <mallok/print.h>
-#include <mallok/chunk.h>
-#include <mallok/area_list.h>
 #include <errno.h>
+#include <mallok/area_list.h>
+#include <mallok/chunk.h>
+#include <mallok/print.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
