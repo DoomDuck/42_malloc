@@ -40,7 +40,9 @@ fmt:
 $(NAME): $(OBJECTS)
 	$(CC) -o $@ --shared $^
 	strip $@ -K malloc -K realloc -K free -K show_alloc_mem -K show_alloc_mem_ex
-	ln -sf $@ libft_malloc.so
+
+libft_malloc.so:
+	ln -sf $(NAME) $
 
 $(OBJS_DIR)/%.o: $(SRC_DIR)/%.c
 	@ mkdir -p $(@D)
