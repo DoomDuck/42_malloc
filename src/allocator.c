@@ -25,11 +25,11 @@ void allocator_init(allocator* self) {
     // Preallocate some areas
     area_list_insert(
         &self->tiny,
-        round_up_to_multiple(AREA_TINY_SIZE, self->page_size)
+        round_up_to_multiple(AREA_TINY_MIN_SIZE, self->page_size)
     );
     area_list_insert(
         &self->small,
-        round_up_to_multiple(AREA_SMALL_SIZE, self->page_size)
+        round_up_to_multiple(AREA_SMALL_MIN_SIZE, self->page_size)
     );
 }
 
@@ -44,16 +44,15 @@ void allocator_deinit(allocator* self) {
 }
 
 size_t allocator_area_size_for_size(allocator* self, size_t allocation_size) {
-    size_t result = 0;
+    size_t min_size = 0;
     if (allocation_size <= AREA_TINY_MAX_ALLOCATION_SIZE) {
-        result = AREA_TINY_SIZE;
+        min_size = AREA_TINY_MIN_SIZE;
     } else if (allocation_size <= AREA_SMALL_MAX_ALLOCATION_SIZE) {
-        result = AREA_SMALL_SIZE;
+        min_size = AREA_SMALL_MIN_SIZE;
     } else {
-        result = allocation_size;
+        min_size = AREA_HEADER_SIZE + CHUNK_HEADER_SIZE + allocation_size;
     }
-    result += AREA_HEADER_SIZE + CHUNK_HEADER_SIZE;
-    return round_up_to_multiple(result, self->page_size);
+    return round_up_to_multiple(min_size, self->page_size);
 }
 
 area_list*
