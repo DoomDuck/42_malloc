@@ -17,9 +17,10 @@ CFLAGS = -I $(INC_DIR) -Wall -Wextra -pedantic -fPIC
 SOURCES = $(shell find src/ -type f -name '*.c')
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJS_DIR)/%.o)
 DEPS = $(SOURCES:$(SRC_DIR)/%.c=$(DEPS_DIR)/%.d)
+LINK = libft_malloc.so
 
 .PHONY: all
-all: $(NAME)
+all: $(LINK)
 
 .PHONY: clean
 clean: 
@@ -27,7 +28,7 @@ clean:
 
 .PHONY: fclean
 fclean: clean
-	$(RM) $(NAME)
+	$(RM) $(NAME) $(LINK)
 
 .PHONY: re
 re: fclean
@@ -41,8 +42,8 @@ $(NAME): $(OBJECTS)
 	$(CC) -o $@ --shared $^
 	strip $@ -K malloc -K realloc -K free -K show_alloc_mem -K show_alloc_mem_ex
 
-libft_malloc.so:
-	ln -sf $(NAME) $
+$(LINK): $(NAME)
+	ln -sf $^ $@
 
 $(OBJS_DIR)/%.o: $(SRC_DIR)/%.c
 	@ mkdir -p $(@D)
